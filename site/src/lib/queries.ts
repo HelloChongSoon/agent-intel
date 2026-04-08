@@ -14,6 +14,7 @@ export async function getLeaderboard(params: {
   pageSize?: number;
   agency?: string;
 }): Promise<{ rows: LeaderboardRow[]; total: number }> {
+  if (!supabase) return { rows: [], total: 0 };
   const year = params.year || new Date().getFullYear();
   const page = params.page || 1;
   const pageSize = params.pageSize || 25;
@@ -25,7 +26,10 @@ export async function getLeaderboard(params: {
     page_size: pageSize,
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('getLeaderboard failed:', error.message);
+    return { rows: [], total: 0 };
+  }
 
   const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
   const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
@@ -54,6 +58,7 @@ export interface AgentRow {
 }
 
 export async function getAgent(ceaNumber: string): Promise<AgentRow | null> {
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from('agents')
     .select('*')
@@ -73,13 +78,17 @@ export interface TransactionRow {
 }
 
 export async function getAgentTransactions(ceaNumber: string): Promise<TransactionRow[]> {
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('transactions')
     .select('date, property_type, transaction_type, role, location')
     .eq('cea_number', ceaNumber)
     .order('date', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('getAgentTransactions failed:', error.message);
+    return [];
+  }
   return (data || []) as TransactionRow[];
 }
 
@@ -98,6 +107,7 @@ export async function getMovements(params: {
   pageSize?: number;
   type?: string;
 }): Promise<{ rows: MovementRow[]; total: number }> {
+  if (!supabase) return { rows: [], total: 0 };
   const page = params.page || 1;
   const pageSize = params.pageSize || 20;
   const from = (page - 1) * pageSize;
@@ -115,7 +125,10 @@ export async function getMovements(params: {
     .order('date', { ascending: false })
     .range(from, to);
 
-  if (error) throw error;
+  if (error) {
+    console.error('getMovements failed:', error.message);
+    return { rows: [], total: 0 };
+  }
 
   return {
     rows: (data || []) as MovementRow[],
@@ -124,6 +137,7 @@ export async function getMovements(params: {
 }
 
 export async function searchAgents(query: string, limit: number = 50): Promise<AgentRow[]> {
+  if (!supabase) return [];
   // Use trigram similarity for fuzzy search on name, exact match on CEA number
   const { data, error } = await supabase
     .from('agents')
@@ -131,11 +145,15 @@ export async function searchAgents(query: string, limit: number = 50): Promise<A
     .or(`name.ilike.%${query}%,cea_number.ilike.%${query}%`)
     .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    console.error('searchAgents failed:', error.message);
+    return [];
+  }
   return (data || []) as AgentRow[];
 }
 
 export async function getAgencies(): Promise<string[]> {
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('agents')
     .select('agency')
@@ -143,7 +161,10 @@ export async function getAgencies(): Promise<string[]> {
     .not('agency', 'eq', '')
     .order('agency');
 
-  if (error) throw error;
+  if (error) {
+    console.error('getAgencies failed:', error.message);
+    return [];
+  }
 
   // Deduplicate
   const unique = [...new Set((data || []).map(r => r.agency).filter(Boolean))];
