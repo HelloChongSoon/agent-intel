@@ -14,6 +14,24 @@ export interface LeaderboardFilterOptions {
   transactionTypes: string[];
 }
 
+function extractRpcScalar<T extends string | number>(
+  value: unknown,
+  key: string
+): T | null {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value as T;
+  }
+
+  if (value && typeof value === 'object' && key in value) {
+    const fieldValue = (value as Record<string, unknown>)[key];
+    if (typeof fieldValue === 'string' || typeof fieldValue === 'number') {
+      return fieldValue as T;
+    }
+  }
+
+  return null;
+}
+
 async function getSupabase() {
   try {
     const cookieStore = await cookies();
@@ -39,8 +57,10 @@ export async function getAvailableLeaderboardYears(minYear: number = 2017): Prom
     return Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
   }
 
-  const years = ((data || []) as Array<number | string>)
-    .map((value: number | string) => Number(value))
+  const years = ((data || []) as Array<unknown>)
+    .map((value) => extractRpcScalar<number | string>(value, 'year'))
+    .filter((value): value is number | string => value !== null)
+    .map((value) => Number(value))
     .filter((year: number) => Number.isInteger(year) && year >= minYear && year <= currentYear)
     .sort((a, b) => b - a);
 
@@ -75,11 +95,13 @@ export async function getLeaderboardFilterOptions(year?: number): Promise<Leader
     console.error('getLeaderboardFilterOptions transaction types failed:', transactionTypesResult.error.message);
   }
 
-  const propertyTypes = ((propertyTypesResult.data || []) as Array<string | null>)
+  const propertyTypes = ((propertyTypesResult.data || []) as Array<unknown>)
+    .map((value) => extractRpcScalar<string>(value, 'property_type'))
     .filter((value): value is string => Boolean(value))
     .sort((a, b) => a.localeCompare(b));
 
-  const transactionTypes = ((transactionTypesResult.data || []) as Array<string | null>)
+  const transactionTypes = ((transactionTypesResult.data || []) as Array<unknown>)
+    .map((value) => extractRpcScalar<string>(value, 'transaction_type'))
     .filter((value): value is string => Boolean(value))
     .sort((a, b) => a.localeCompare(b));
 
