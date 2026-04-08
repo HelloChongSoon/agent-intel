@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getLeaderboard } from '@/lib/queries';
+import { getLeaderboard, getLatestLeaderboardYear } from '@/lib/queries';
 import Pagination from '@/components/Pagination';
 
 interface Props {
@@ -9,9 +9,10 @@ interface Props {
 export default async function LeaderboardPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = parseInt(params.page || '1');
-  const year = parseInt(params.year || '2026');
+  const requestedYear = params.year ? parseInt(params.year, 10) : undefined;
   const agency = params.agency || undefined;
   const pageSize = 25;
+  const year = requestedYear ?? await getLatestLeaderboardYear();
 
   const { rows, total } = await getLeaderboard({ year, page, pageSize, agency });
   const totalPages = Math.ceil(total / pageSize);

@@ -8,6 +8,19 @@ export interface LeaderboardRow {
   transactions: number;
 }
 
+export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<number> {
+  const currentYear = new Date().getFullYear();
+
+  for (let year = currentYear; year >= minYear; year--) {
+    const { total } = await getLeaderboard({ year, page: 1, pageSize: 1 });
+    if (total > 0) {
+      return year;
+    }
+  }
+
+  return currentYear;
+}
+
 export async function getLeaderboard(params: {
   year?: number;
   page?: number;

@@ -75,7 +75,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Year-based leaderboard function
 CREATE OR REPLACE FUNCTION get_leaderboard(
-  year_filter TEXT DEFAULT '2026',
+  year_filter TEXT DEFAULT NULL,
   agency_filter TEXT DEFAULT NULL,
   page_num INT DEFAULT 1,
   page_size INT DEFAULT 25
@@ -92,7 +92,7 @@ BEGIN
       RANK() OVER (ORDER BY COUNT(t.id) DESC) AS rank
     FROM agents a
     JOIN transactions t ON t.cea_number = a.cea_number
-    WHERE t.date LIKE '%' || year_filter
+    WHERE (year_filter IS NULL OR t.date LIKE '%' || year_filter)
       AND (agency_filter IS NULL OR a.agency = agency_filter)
     GROUP BY a.cea_number, a.name, a.agency
     HAVING COUNT(t.id) > 0
