@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "npx tsx sync-gov-data.ts",
+    "sync-scraper": "npx tsx sync-scraper-data.ts",
+    "initial-load": "npx tsx initial-load.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "tsx": "^4"
+  }
+}
