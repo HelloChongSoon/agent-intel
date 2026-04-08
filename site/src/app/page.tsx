@@ -3,10 +3,10 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center gap-10 py-8">
+    <div className="flex min-h-[70vh] flex-col items-center justify-center gap-10 py-4">
       <div className="max-w-3xl text-center">
         <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500">Singapore Real Estate Intelligence</p>
-        <h1 className="mb-4 text-5xl font-semibold tracking-tight text-zinc-50 md:text-6xl">Agent Intel</h1>
+        <h1 className="mb-4 text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">Agent Intel</h1>
         <p className="text-xl text-zinc-400">
           Singapore property agent directory — rankings, profiles, and agency movements.
         </p>

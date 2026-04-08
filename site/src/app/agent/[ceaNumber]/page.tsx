@@ -27,8 +27,8 @@ export default async function AgentPage({ params }: Props) {
         &larr; Back to Leaderboard
       </Link>
 
-      <div className="rounded-[28px] border border-zinc-800 bg-zinc-950/90 p-6">
-        <h1 className="text-3xl font-semibold text-zinc-50">{agent.name}</h1>
+      <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">{agent.name}</h1>
         <p className="mt-1 text-sm text-zinc-500">{ceaNumber}</p>
 
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -59,11 +59,11 @@ export default async function AgentPage({ params }: Props) {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-5">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
           <div className="text-3xl font-semibold text-zinc-50">{agent.total_transactions}</div>
           <div className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-500">Total Transactions</div>
         </div>
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-5">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
           <div className="text-sm font-medium text-zinc-100">Property Types</div>
           <div className="mt-3 space-y-2">
             {[...propertyTypes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([type, count]) => (
@@ -74,7 +74,7 @@ export default async function AgentPage({ params }: Props) {
             ))}
           </div>
         </div>
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-5">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
           <div className="text-sm font-medium text-zinc-100">Transaction Types</div>
           <div className="mt-3 space-y-2">
             {[...transactionTypes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([type, count]) => (
@@ -88,7 +88,7 @@ export default async function AgentPage({ params }: Props) {
       </div>
 
       {/* Transaction History */}
-      <div className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950/90">
+      <div className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90">
         <div className="border-b border-zinc-800 px-6 py-4">
           <h2 className="text-sm font-semibold text-zinc-100">Transaction History</h2>
         </div>

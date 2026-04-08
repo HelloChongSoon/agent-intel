@@ -36,7 +36,7 @@ export default async function MovementsPage({ searchParams }: Props) {
     <div className="space-y-6 py-2">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-zinc-50">Agent Movements</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">Agent Movements</h1>
           <p className="mt-2 text-lg text-zinc-400">
             {total.toLocaleString()} movements tracked
             {type && <span> — filtered by {TYPE_LABELS[type] || type}</span>}
@@ -65,7 +65,7 @@ export default async function MovementsPage({ searchParams }: Props) {
 
       <div className="space-y-3">
         {rows.map((movement) => (
-          <div key={movement.id} className="flex items-center justify-between rounded-[24px] border border-zinc-800 bg-zinc-950/90 px-5 py-4">
+          <div key={movement.id} className="flex items-center justify-between rounded-[24px] border border-zinc-800 bg-zinc-950/90 px-6 py-4">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <Link href={`/agent/${movement.cea_number}`} className="text-sm font-medium text-zinc-100 transition hover:text-white">

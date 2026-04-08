@@ -65,92 +65,90 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const showingTo = total === 0 ? 0 : Math.min(page * pageSize, total);
 
   return (
-    <div className="-mx-4 min-h-[calc(100vh-97px)] bg-[#09090b] px-4 py-10 text-zinc-100 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-10 grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] xl:items-start">
-          <div className="max-w-2xl pt-1">
-            <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+    <div className="min-h-[calc(100vh-97px)] py-2 text-zinc-100">
+      <div className="mb-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] xl:items-start">
+        <div className="max-w-2xl pt-1">
+          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
               Agent Leaderboard
-            </h1>
-            <p className="mt-4 text-xl text-zinc-400">
-              Top agents by transaction volume in Singapore
-            </p>
-          </div>
-
-          <LeaderboardFilters
-            years={availableYears}
-            agencies={agencies}
-            propertyTypes={propertyTypes}
-            transactionTypes={transactionTypes}
-            selectedYear={year}
-            selectedAgency={agency}
-            selectedPropertyType={activePropertyType}
-            selectedTransactionType={activeTransactionType}
-          />
+          </h1>
+          <p className="mt-2 text-lg text-zinc-400">
+            Top agents by transaction volume in Singapore
+          </p>
         </div>
 
-        <section className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950/90 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
-          <div className="border-b border-zinc-800 px-6 py-8 md:px-10">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-2xl font-semibold text-white">Agent Rankings</h2>
-              <p className="text-lg text-zinc-400">
-                Showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()} of {total.toLocaleString()} agents in {year}
-                {agency && <span> for {agency}</span>}
-                {activePropertyType && <span> matching {activePropertyType.replaceAll('_', ' ')}</span>}
-                {activeTransactionType && <span> via {activeTransactionType.replaceAll('_', ' ')}</span>}
-              </p>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] table-fixed">
-              <thead>
-                <tr className="border-b border-zinc-800 text-left">
-                  <th className="w-28 px-6 py-5 text-sm font-semibold text-zinc-300 md:px-10">Rank</th>
-                  <th className="px-6 py-5 text-sm font-semibold text-zinc-300 md:px-10">Name</th>
-                  <th className="w-64 px-6 py-5 text-sm font-semibold text-zinc-300">Agency</th>
-                  <th className="w-40 px-6 py-5 text-right text-sm font-semibold text-zinc-300 md:px-10">Transactions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((agent) => (
-                  <tr key={agent.cea_number} className="border-b border-zinc-900/80 transition hover:bg-zinc-900/70">
-                    <td className="px-6 py-5 md:px-10">
-                      <div className="flex items-center gap-3 text-2xl font-semibold text-white">
-                        <TrophyIcon rank={agent.rank} />
-                        <span>{agent.rank}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 md:px-10">
-                      <Link href={`/agent/${agent.cea_number}`} className="block text-xl font-medium text-zinc-100 transition hover:text-white">
-                        {agent.name}
-                      </Link>
-                      <div className="mt-1 text-sm text-zinc-500">{agent.cea_number}</div>
-                    </td>
-                    <td className="px-6 py-5 text-lg text-zinc-400">
-                      {agent.agency || 'Independent'}
-                    </td>
-                    <td className="px-6 py-5 text-right text-2xl font-semibold text-white md:px-10">
-                      {agent.transactions}
-                    </td>
-                  </tr>
-                ))}
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-16 text-center text-lg text-zinc-500 md:px-10">
-                      No agents found for this filter set.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="px-6 pb-8 pt-6 md:px-10">
-            <LeaderboardPagination currentPage={page} totalPages={totalPages} searchParams={filterParams} />
-          </div>
-        </section>
+        <LeaderboardFilters
+          years={availableYears}
+          agencies={agencies}
+          propertyTypes={propertyTypes}
+          transactionTypes={transactionTypes}
+          selectedYear={year}
+          selectedAgency={agency}
+          selectedPropertyType={activePropertyType}
+          selectedTransactionType={activeTransactionType}
+        />
       </div>
+
+      <section className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
+        <div className="border-b border-zinc-800 px-6 py-6 md:px-8">
+          <div className="flex flex-col gap-1.5">
+            <h2 className="text-xl font-semibold text-white">Agent Rankings</h2>
+            <p className="text-base text-zinc-400">
+              Showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()} of {total.toLocaleString()} agents in {year}
+              {agency && <span> for {agency}</span>}
+              {activePropertyType && <span> matching {activePropertyType.replaceAll('_', ' ')}</span>}
+              {activeTransactionType && <span> via {activeTransactionType.replaceAll('_', ' ')}</span>}
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] table-fixed">
+            <thead>
+              <tr className="border-b border-zinc-800 text-left">
+                <th className="w-28 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 md:px-8">Rank</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 md:px-8">Name</th>
+                <th className="w-64 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Agency</th>
+                <th className="w-40 px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 md:px-8">Transactions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((agent) => (
+                <tr key={agent.cea_number} className="border-b border-zinc-900/80 transition hover:bg-zinc-900/70">
+                  <td className="px-6 py-4 md:px-8">
+                    <div className="flex items-center gap-3 text-xl font-semibold text-white">
+                      <TrophyIcon rank={agent.rank} />
+                      <span>{agent.rank}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 md:px-8">
+                    <Link href={`/agent/${agent.cea_number}`} className="block text-base font-medium text-zinc-100 transition hover:text-white md:text-lg">
+                      {agent.name}
+                    </Link>
+                    <div className="mt-1 text-sm text-zinc-500">{agent.cea_number}</div>
+                  </td>
+                  <td className="px-6 py-4 text-base text-zinc-400">
+                    {agent.agency || 'Independent'}
+                  </td>
+                  <td className="px-6 py-4 text-right text-xl font-semibold text-white md:px-8">
+                    {agent.transactions}
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-16 text-center text-base text-zinc-500 md:px-8">
+                    No agents found for this filter set.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="px-6 pb-8 pt-6 md:px-8">
+          <LeaderboardPagination currentPage={page} totalPages={totalPages} searchParams={filterParams} />
+        </div>
+      </section>
     </div>
   );
 }

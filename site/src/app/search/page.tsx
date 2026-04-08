@@ -14,7 +14,7 @@ export default async function SearchPage({ searchParams }: Props) {
   return (
     <div className="space-y-6 py-2">
       <div>
-        <h1 className="text-4xl font-semibold tracking-tight text-zinc-50">Search Agents</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">Search Agents</h1>
         <p className="mt-2 text-lg text-zinc-400">Find profiles by name or CEA number.</p>
       </div>
       <SearchBar />
@@ -26,7 +26,7 @@ export default async function SearchPage({ searchParams }: Props) {
       )}
 
       {results.length > 0 && (
-        <div className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950/90">
+        <div className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90">
           <table className="w-full">
             <thead>
               <tr className="border-b border-zinc-800">
