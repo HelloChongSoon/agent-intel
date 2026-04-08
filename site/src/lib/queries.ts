@@ -23,6 +23,10 @@ export async function getAvailableLeaderboardYears(minYear: number = 2017): Prom
   const currentYear = new Date().getFullYear();
   const supabase = await getSupabase();
 
+  if (!supabase) {
+    return Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
+  }
+
   const { data, error } = await supabase.rpc('get_available_leaderboard_years');
 
   if (error) {
@@ -47,6 +51,10 @@ export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<
 
 export async function getLeaderboardFilterOptions(year?: number): Promise<LeaderboardFilterOptions> {
   const supabase = await getSupabase();
+
+  if (!supabase) {
+    return { propertyTypes: [], transactionTypes: [] };
+  }
 
   const yearFilter = year ? String(year) : null;
   const [propertyTypesResult, transactionTypesResult] = await Promise.all([
@@ -82,6 +90,7 @@ export async function getLeaderboard(params: {
   transactionType?: string;
 }): Promise<{ rows: LeaderboardRow[]; total: number }> {
   const supabase = await getSupabase();
+  if (!supabase) return { rows: [], total: 0 };
   const year = params.year || new Date().getFullYear();
   const page = params.page || 1;
   const pageSize = params.pageSize || 25;
@@ -170,6 +179,7 @@ export interface AgentRow {
 
 export async function getAgent(ceaNumber: string): Promise<AgentRow | null> {
   const supabase = await getSupabase();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from('agents')
     .select('*')
@@ -190,6 +200,7 @@ export interface TransactionRow {
 
 export async function getAgentTransactions(ceaNumber: string): Promise<TransactionRow[]> {
   const supabase = await getSupabase();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('transactions')
     .select('date, property_type, transaction_type, role, location')
@@ -219,6 +230,7 @@ export async function getMovements(params: {
   type?: string;
 }): Promise<{ rows: MovementRow[]; total: number }> {
   const supabase = await getSupabase();
+  if (!supabase) return { rows: [], total: 0 };
   const page = params.page || 1;
   const pageSize = params.pageSize || 20;
   const from = (page - 1) * pageSize;
@@ -249,6 +261,7 @@ export async function getMovements(params: {
 
 export async function searchAgents(query: string, limit: number = 50): Promise<AgentRow[]> {
   const supabase = await getSupabase();
+  if (!supabase) return [];
   // Use trigram similarity for fuzzy search on name, exact match on CEA number
   const { data, error } = await supabase
     .from('agents')
@@ -265,6 +278,7 @@ export async function searchAgents(query: string, limit: number = 50): Promise<A
 
 export async function getAgencies(): Promise<string[]> {
   const supabase = await getSupabase();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('agents')
     .select('agency')
