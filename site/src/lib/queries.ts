@@ -15,8 +15,13 @@ export interface LeaderboardFilterOptions {
 }
 
 async function getSupabase() {
-  const cookieStore = await cookies();
-  return createClient(cookieStore);
+  try {
+    const cookieStore = await cookies();
+    return createClient(cookieStore);
+  } catch (error) {
+    console.error('Failed to initialize Supabase in server query layer:', error);
+    return null;
+  }
 }
 
 export async function getAvailableLeaderboardYears(minYear: number = 2017): Promise<number[]> {

@@ -18,29 +18,34 @@ export const updateSession = (request: NextRequest) => {
     return response;
   }
 
-  const supabase = createServerClient(
-    supabaseUrl!,
-    supabaseKey!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  try {
+    const supabase = createServerClient(
+      supabaseUrl!,
+      supabaseKey!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            response = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+      }
+    );
 
-  // This keeps the auth session fresh when middleware runs.
-  void supabase.auth.getUser();
+    // This keeps the auth session fresh when middleware runs.
+    void supabase.auth.getUser();
+  } catch (error) {
+    console.error('Supabase middleware failed, continuing without session refresh:', error);
+    return response;
+  }
 
   return response;
 };

@@ -12,24 +12,29 @@ export const createClient = (cookieStore: Awaited<ReturnType<typeof cookies>>) =
     return null;
   }
 
-  return createServerClient(
-    supabaseUrl!,
-    supabaseKey!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
+  try {
+    return createServerClient(
+      supabaseUrl!,
+      supabaseKey!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                cookieStore.set(name, value, options);
+              });
+            } catch {
+              // Ignore cookie writes from Server Components.
+            }
+          },
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch {
-            // Ignore cookie writes from Server Components.
-          }
-        },
-      },
-    }
-  );
+      }
+    );
+  } catch (error) {
+    console.error('Failed to create Supabase server client:', error);
+    return null;
+  }
 };
