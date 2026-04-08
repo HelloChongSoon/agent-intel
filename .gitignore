@@ -7,3 +7,4 @@ dist/
 data/
 site/.next/
 site/.env.local
+.vercel
