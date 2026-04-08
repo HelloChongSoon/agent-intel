@@ -22,35 +22,35 @@ export default async function AgentPage({ params }: Props) {
   }
 
   return (
-    <div>
-      <Link href="/leaderboard" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+    <div className="space-y-6 py-2">
+      <Link href="/leaderboard" className="inline-block text-sm text-zinc-400 transition hover:text-zinc-100">
         &larr; Back to Leaderboard
       </Link>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{agent.name}</h1>
-        <p className="text-sm text-gray-500 mt-1">{ceaNumber}</p>
+      <div className="rounded-[28px] border border-zinc-800 bg-zinc-950/90 p-6">
+        <h1 className="text-3xl font-semibold text-zinc-50">{agent.name}</h1>
+        <p className="mt-1 text-sm text-zinc-500">{ceaNumber}</p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           <div>
-            <div className="text-xs text-gray-400 uppercase">Agency</div>
-            <div className="text-sm font-medium text-gray-900 mt-1">{agent.agency || '—'}</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Agency</div>
+            <div className="mt-1 text-sm font-medium text-zinc-100">{agent.agency || '—'}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 uppercase">Phone</div>
-            <div className="text-sm text-gray-900 mt-1">
-              {agent.phone ? <a href={`tel:${agent.phone}`} className="text-blue-600 hover:underline">{agent.phone}</a> : '—'}
+            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Phone</div>
+            <div className="mt-1 text-sm text-zinc-100">
+              {agent.phone ? <a href={`tel:${agent.phone}`} className="text-zinc-100 transition hover:text-white">{agent.phone}</a> : '—'}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 uppercase">Email</div>
-            <div className="text-sm text-gray-900 mt-1">
-              {agent.email ? <a href={`mailto:${agent.email}`} className="text-blue-600 hover:underline">{agent.email}</a> : '—'}
+            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Email</div>
+            <div className="mt-1 text-sm text-zinc-100">
+              {agent.email ? <a href={`mailto:${agent.email}`} className="text-zinc-100 transition hover:text-white">{agent.email}</a> : '—'}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 uppercase">Registration</div>
-            <div className="text-sm text-gray-900 mt-1">
+            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Registration</div>
+            <div className="mt-1 text-sm text-zinc-100">
               {agent.registration_start || '—'} to {agent.registration_end || '—'}
             </div>
           </div>
@@ -58,29 +58,29 @@ export default async function AgentPage({ params }: Props) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-gray-900">{agent.total_transactions}</div>
-          <div className="text-xs text-gray-400 uppercase mt-1">Total Transactions</div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-5">
+          <div className="text-3xl font-semibold text-zinc-50">{agent.total_transactions}</div>
+          <div className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-500">Total Transactions</div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm font-medium text-gray-900">Property Types</div>
-          <div className="mt-2 space-y-1">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-5">
+          <div className="text-sm font-medium text-zinc-100">Property Types</div>
+          <div className="mt-3 space-y-2">
             {[...propertyTypes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([type, count]) => (
               <div key={type} className="flex justify-between text-xs">
-                <span className="text-gray-600">{type}</span>
-                <span className="text-gray-900 font-medium">{count}</span>
+                <span className="text-zinc-400">{type}</span>
+                <span className="font-medium text-zinc-100">{count}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm font-medium text-gray-900">Transaction Types</div>
-          <div className="mt-2 space-y-1">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-5">
+          <div className="text-sm font-medium text-zinc-100">Transaction Types</div>
+          <div className="mt-3 space-y-2">
             {[...transactionTypes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([type, count]) => (
               <div key={type} className="flex justify-between text-xs">
-                <span className="text-gray-600">{type}</span>
-                <span className="text-gray-900 font-medium">{count}</span>
+                <span className="text-zinc-400">{type}</span>
+                <span className="font-medium text-zinc-100">{count}</span>
               </div>
             ))}
           </div>
@@ -88,34 +88,34 @@ export default async function AgentPage({ params }: Props) {
       </div>
 
       {/* Transaction History */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-900">Transaction History</h2>
+      <div className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950/90">
+        <div className="border-b border-zinc-800 px-6 py-4">
+          <h2 className="text-sm font-semibold text-zinc-100">Transaction History</h2>
         </div>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Property</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+            <tr className="border-b border-zinc-800">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Date</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Property</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Type</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Location</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-zinc-900">
             {transactions.slice(0, 100).map((tx, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-xs text-gray-600">{tx.date}</td>
-                <td className="px-4 py-2 text-xs text-gray-600">{tx.property_type}</td>
-                <td className="px-4 py-2 text-xs text-gray-600">{tx.transaction_type}</td>
-                <td className="px-4 py-2 text-xs text-gray-600">{tx.role}</td>
-                <td className="px-4 py-2 text-xs text-gray-600">{tx.location || '—'}</td>
+              <tr key={i} className="transition hover:bg-zinc-900/60">
+                <td className="px-6 py-3 text-xs text-zinc-400">{tx.date}</td>
+                <td className="px-6 py-3 text-xs text-zinc-400">{tx.property_type}</td>
+                <td className="px-6 py-3 text-xs text-zinc-400">{tx.transaction_type}</td>
+                <td className="px-6 py-3 text-xs text-zinc-400">{tx.role}</td>
+                <td className="px-6 py-3 text-xs text-zinc-400">{tx.location || '—'}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {transactions.length > 100 && (
-          <div className="px-4 py-3 text-xs text-gray-400 text-center border-t">
+          <div className="border-t border-zinc-800 px-6 py-4 text-center text-xs text-zinc-500">
             Showing first 100 of {transactions.length} transactions
           </div>
         )}

@@ -3,39 +3,40 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Agent Intel</h1>
-        <p className="text-lg text-gray-500">
+    <div className="flex min-h-[70vh] flex-col items-center justify-center gap-10 py-8">
+      <div className="max-w-3xl text-center">
+        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500">Singapore Real Estate Intelligence</p>
+        <h1 className="mb-4 text-5xl font-semibold tracking-tight text-zinc-50 md:text-6xl">Agent Intel</h1>
+        <p className="text-xl text-zinc-400">
           Singapore property agent directory — rankings, profiles, and agency movements.
         </p>
       </div>
 
       <SearchBar />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl mt-4">
+      <div className="mt-4 grid w-full max-w-5xl grid-cols-1 gap-4 md:grid-cols-3">
         <Link
           href="/leaderboard"
-          className="p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
+          className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6 transition hover:border-zinc-700 hover:bg-zinc-900"
         >
-          <h2 className="font-semibold text-gray-900 mb-1">Leaderboard</h2>
-          <p className="text-sm text-gray-500">Agent rankings by transaction volume</p>
+          <h2 className="mb-2 text-xl font-semibold text-zinc-100">Leaderboard</h2>
+          <p className="text-sm text-zinc-400">Agent rankings by transaction volume</p>
         </Link>
 
         <Link
           href="/movements"
-          className="p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
+          className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6 transition hover:border-zinc-700 hover:bg-zinc-900"
         >
-          <h2 className="font-semibold text-gray-900 mb-1">Movements</h2>
-          <p className="text-sm text-gray-500">Agency transfers and registrations</p>
+          <h2 className="mb-2 text-xl font-semibold text-zinc-100">Movements</h2>
+          <p className="text-sm text-zinc-400">Agency transfers and registrations</p>
         </Link>
 
         <Link
           href="/leaderboard?agency=ERA+REALTY+NETWORK+PTE+LTD"
-          className="p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
+          className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6 transition hover:border-zinc-700 hover:bg-zinc-900"
         >
-          <h2 className="font-semibold text-gray-900 mb-1">ERA Agents</h2>
-          <p className="text-sm text-gray-500">Filter leaderboard by ERA Realty</p>
+          <h2 className="mb-2 text-xl font-semibold text-zinc-100">ERA Agents</h2>
+          <p className="text-sm text-zinc-400">Filter leaderboard by ERA Realty</p>
         </Link>
       </div>
     </div>

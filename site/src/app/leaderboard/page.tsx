@@ -1,10 +1,16 @@
 import Link from 'next/link';
 import LeaderboardFilters from '@/components/LeaderboardFilters';
 import LeaderboardPagination from '@/components/LeaderboardPagination';
-import { getAgencies, getAvailableLeaderboardYears, getLeaderboard, getLatestLeaderboardYear } from '@/lib/queries';
+import {
+  getAgencies,
+  getAvailableLeaderboardYears,
+  getLeaderboard,
+  getLeaderboardFilterOptions,
+  getLatestLeaderboardYear,
+} from '@/lib/queries';
 
 interface Props {
-  searchParams: Promise<{ page?: string; year?: string; agency?: string }>;
+  searchParams: Promise<{ page?: string; year?: string; agency?: string; propertyType?: string; transactionType?: string }>;
 }
 
 function TrophyIcon({ rank }: { rank: number }) {
@@ -28,6 +34,8 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const page = parseInt(params.page || '1');
   const requestedYear = params.year ? parseInt(params.year, 10) : undefined;
   const agency = params.agency || undefined;
+  const propertyType = params.propertyType || undefined;
+  const transactionType = params.transactionType || undefined;
   const pageSize = 25;
   const [availableYears, agencies] = await Promise.all([
     getAvailableLeaderboardYears(),
@@ -35,12 +43,24 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   ]);
   const fallbackYear = availableYears[0] ?? await getLatestLeaderboardYear();
   const year = requestedYear && availableYears.includes(requestedYear) ? requestedYear : fallbackYear;
+  const { propertyTypes, transactionTypes } = await getLeaderboardFilterOptions(year);
+  const activePropertyType = propertyType && propertyTypes.includes(propertyType) ? propertyType : undefined;
+  const activeTransactionType = transactionType && transactionTypes.includes(transactionType) ? transactionType : undefined;
 
-  const { rows, total } = await getLeaderboard({ year, page, pageSize, agency });
+  const { rows, total } = await getLeaderboard({
+    year,
+    page,
+    pageSize,
+    agency,
+    propertyType: activePropertyType,
+    transactionType: activeTransactionType,
+  });
   const totalPages = Math.ceil(total / pageSize);
 
   const filterParams: Record<string, string> = { year: String(year) };
   if (agency) filterParams.agency = agency;
+  if (activePropertyType) filterParams.propertyType = activePropertyType;
+  if (activeTransactionType) filterParams.transactionType = activeTransactionType;
   const showingFrom = total === 0 ? 0 : ((page - 1) * pageSize) + 1;
   const showingTo = total === 0 ? 0 : Math.min(page * pageSize, total);
 
@@ -60,8 +80,12 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           <LeaderboardFilters
             years={availableYears}
             agencies={agencies}
+            propertyTypes={propertyTypes}
+            transactionTypes={transactionTypes}
             selectedYear={year}
             selectedAgency={agency}
+            selectedPropertyType={activePropertyType}
+            selectedTransactionType={activeTransactionType}
           />
         </div>
 
@@ -72,6 +96,8 @@ export default async function LeaderboardPage({ searchParams }: Props) {
               <p className="text-lg text-zinc-400">
                 Showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()} of {total.toLocaleString()} agents in {year}
                 {agency && <span> for {agency}</span>}
+                {activePropertyType && <span> matching {activePropertyType.replaceAll('_', ' ')}</span>}
+                {activeTransactionType && <span> via {activeTransactionType.replaceAll('_', ' ')}</span>}
               </p>
             </div>
           </div>

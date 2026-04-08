@@ -34,6 +34,8 @@ CREATE TABLE transactions (
 
 CREATE INDEX idx_transactions_cea ON transactions(cea_number);
 CREATE INDEX idx_transactions_date ON transactions(date DESC);
+CREATE INDEX idx_transactions_property_type ON transactions(property_type);
+CREATE INDEX idx_transactions_transaction_type ON transactions(transaction_type);
 CREATE INDEX idx_transactions_year_text ON transactions (
   (
     CASE
@@ -102,10 +104,52 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+CREATE OR REPLACE FUNCTION get_available_leaderboard_property_types(year_filter TEXT DEFAULT NULL)
+RETURNS TABLE(property_type TEXT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT DISTINCT t.property_type
+  FROM transactions t
+  WHERE t.property_type IS NOT NULL
+    AND t.property_type <> ''
+    AND (
+      year_filter IS NULL
+      OR CASE
+        WHEN t.date ~ '^[A-Z]{3}-[0-9]{4}$' THEN RIGHT(t.date, 4)
+        WHEN t.date ~ '^[0-9]{4}-' THEN LEFT(t.date, 4)
+        ELSE NULL
+      END = year_filter
+    )
+  ORDER BY t.property_type ASC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION get_available_leaderboard_transaction_types(year_filter TEXT DEFAULT NULL)
+RETURNS TABLE(transaction_type TEXT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT DISTINCT t.transaction_type
+  FROM transactions t
+  WHERE t.transaction_type IS NOT NULL
+    AND t.transaction_type <> ''
+    AND (
+      year_filter IS NULL
+      OR CASE
+        WHEN t.date ~ '^[A-Z]{3}-[0-9]{4}$' THEN RIGHT(t.date, 4)
+        WHEN t.date ~ '^[0-9]{4}-' THEN LEFT(t.date, 4)
+        ELSE NULL
+      END = year_filter
+    )
+  ORDER BY t.transaction_type ASC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Year-based leaderboard function
 CREATE OR REPLACE FUNCTION get_leaderboard(
   year_filter TEXT DEFAULT NULL,
   agency_filter TEXT DEFAULT NULL,
+  property_type_filter TEXT DEFAULT NULL,
+  transaction_type_filter TEXT DEFAULT NULL,
   page_num INT DEFAULT 1,
   page_size INT DEFAULT 25
 )
@@ -130,6 +174,8 @@ BEGIN
       END = year_filter
     )
       AND (agency_filter IS NULL OR a.agency = agency_filter)
+      AND (property_type_filter IS NULL OR t.property_type = property_type_filter)
+      AND (transaction_type_filter IS NULL OR t.transaction_type = transaction_type_filter)
     GROUP BY a.cea_number, a.name, a.agency
     HAVING COUNT(t.id) > 0
   )

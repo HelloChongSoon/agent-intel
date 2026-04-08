@@ -8,6 +8,11 @@ export interface LeaderboardRow {
   transactions: number;
 }
 
+export interface LeaderboardFilterOptions {
+  propertyTypes: string[];
+  transactionTypes: string[];
+}
+
 export async function getAvailableLeaderboardYears(minYear: number = 2017): Promise<number[]> {
   const currentYear = new Date().getFullYear();
 
@@ -37,11 +42,41 @@ export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<
   return availableYears[0] || currentYear;
 }
 
+export async function getLeaderboardFilterOptions(year?: number): Promise<LeaderboardFilterOptions> {
+  if (!supabase) return { propertyTypes: [], transactionTypes: [] };
+
+  const yearFilter = year ? String(year) : null;
+  const [propertyTypesResult, transactionTypesResult] = await Promise.all([
+    supabase.rpc('get_available_leaderboard_property_types', { year_filter: yearFilter }),
+    supabase.rpc('get_available_leaderboard_transaction_types', { year_filter: yearFilter }),
+  ]);
+
+  if (propertyTypesResult.error) {
+    console.error('getLeaderboardFilterOptions property types failed:', propertyTypesResult.error.message);
+  }
+
+  if (transactionTypesResult.error) {
+    console.error('getLeaderboardFilterOptions transaction types failed:', transactionTypesResult.error.message);
+  }
+
+  const propertyTypes = ((propertyTypesResult.data || []) as Array<string | null>)
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => a.localeCompare(b));
+
+  const transactionTypes = ((transactionTypesResult.data || []) as Array<string | null>)
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => a.localeCompare(b));
+
+  return { propertyTypes, transactionTypes };
+}
+
 export async function getLeaderboard(params: {
   year?: number;
   page?: number;
   pageSize?: number;
   agency?: string;
+  propertyType?: string;
+  transactionType?: string;
 }): Promise<{ rows: LeaderboardRow[]; total: number }> {
   if (!supabase) return { rows: [], total: 0 };
   const year = params.year || new Date().getFullYear();
@@ -53,6 +88,8 @@ export async function getLeaderboard(params: {
   const { data, error } = await supabase.rpc('get_leaderboard', {
     year_filter: String(year),
     agency_filter: params.agency || null,
+    property_type_filter: params.propertyType || null,
+    transaction_type_filter: params.transactionType || null,
     page_num: page,
     page_size: pageSize,
   });

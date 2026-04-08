@@ -12,38 +12,41 @@ export default async function SearchPage({ searchParams }: Props) {
   const results = query ? await searchAgents(query, 50) : [];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Search Agents</h1>
+    <div className="space-y-6 py-2">
+      <div>
+        <h1 className="text-4xl font-semibold tracking-tight text-zinc-50">Search Agents</h1>
+        <p className="mt-2 text-lg text-zinc-400">Find profiles by name or CEA number.</p>
+      </div>
       <SearchBar />
 
       {query && (
-        <p className="text-sm text-gray-500 mt-4 mb-4">
+        <p className="text-sm text-zinc-400">
           {results.length} results for &ldquo;{query}&rdquo;
         </p>
       )}
 
       {results.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mt-4">
+        <div className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950/90">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CEA Number</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agency</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Transactions</th>
+              <tr className="border-b border-zinc-800">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Name</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">CEA Number</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Agency</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Transactions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-zinc-900">
               {results.map((agent) => (
-                <tr key={agent.cea_number} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <Link href={`/agent/${agent.cea_number}`} className="text-sm font-medium text-blue-600 hover:underline">
+                <tr key={agent.cea_number} className="transition hover:bg-zinc-900/60">
+                  <td className="px-6 py-4">
+                    <Link href={`/agent/${agent.cea_number}`} className="text-sm font-medium text-zinc-100 transition hover:text-white">
                       {agent.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{agent.cea_number}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{agent.agency || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900 font-medium text-right">{agent.total_transactions}</td>
+                  <td className="px-6 py-4 text-sm text-zinc-500">{agent.cea_number}</td>
+                  <td className="px-6 py-4 text-sm text-zinc-400">{agent.agency || '—'}</td>
+                  <td className="px-6 py-4 text-right text-sm font-medium text-zinc-100">{agent.total_transactions}</td>
                 </tr>
               ))}
             </tbody>

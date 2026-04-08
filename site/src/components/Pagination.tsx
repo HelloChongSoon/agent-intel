@@ -29,26 +29,26 @@ export default function Pagination({ currentPage, totalPages, basePath, searchPa
   }
 
   return (
-    <div className="flex items-center justify-center gap-1 mt-6">
+    <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
       {currentPage > 1 && (
         <Link
           href={buildHref(currentPage - 1)}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+          className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
         >
           Previous
         </Link>
       )}
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`dots-${i}`} className="px-2 py-2 text-sm text-gray-400">...</span>
+          <span key={`dots-${i}`} className="px-3 py-2 text-sm text-zinc-600">...</span>
         ) : (
           <Link
             key={p}
             href={buildHref(p)}
-            className={`px-3 py-2 text-sm rounded-md border ${
+            className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
               p === currentPage
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'border-gray-300 hover:bg-gray-50'
+                ? 'border-zinc-100 bg-zinc-100 text-zinc-950'
+                : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:text-white'
             }`}
           >
             {p}
@@ -58,7 +58,7 @@ export default function Pagination({ currentPage, totalPages, basePath, searchPa
       {currentPage < totalPages && (
         <Link
           href={buildHref(currentPage + 1)}
-          className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+          className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
         >
           Next
         </Link>

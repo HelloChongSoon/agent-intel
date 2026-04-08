@@ -26,19 +26,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}>
-        <nav className="bg-white border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold text-gray-900">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <nav className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <Link href="/" className="text-xl font-semibold tracking-tight text-zinc-50">
               Agent Intel
             </Link>
-            <div className="flex items-center gap-6 text-sm font-medium text-gray-600">
-              <Link href="/leaderboard" className="hover:text-gray-900">Leaderboard</Link>
-              <Link href="/movements" className="hover:text-gray-900">Movements</Link>
+            <div className="flex items-center gap-6 text-sm font-medium text-zinc-400">
+              <Link href="/leaderboard" className="transition hover:text-zinc-100">Leaderboard</Link>
+              <Link href="/movements" className="transition hover:text-zinc-100">Movements</Link>
+              <Link href="/search" className="transition hover:text-zinc-100">Search</Link>
             </div>
           </div>
         </nav>
-        <main className="max-w-6xl mx-auto px-4 py-8">
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {children}
         </main>
       </body>

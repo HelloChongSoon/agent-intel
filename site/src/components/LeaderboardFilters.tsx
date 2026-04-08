@@ -6,8 +6,16 @@ import { useTransition } from 'react';
 interface LeaderboardFiltersProps {
   years: number[];
   agencies: string[];
+  propertyTypes: string[];
+  transactionTypes: string[];
   selectedYear: number;
   selectedAgency?: string;
+  selectedPropertyType?: string;
+  selectedTransactionType?: string;
+}
+
+function formatFilterLabel(value: string): string {
+  return value.replaceAll('_', ' ');
 }
 
 function SelectChevron() {
@@ -61,8 +69,12 @@ function FilterSelect({
 export default function LeaderboardFilters({
   years,
   agencies,
+  propertyTypes,
+  transactionTypes,
   selectedYear,
   selectedAgency,
+  selectedPropertyType,
+  selectedTransactionType,
 }: LeaderboardFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -114,12 +126,30 @@ export default function LeaderboardFilters({
         ))}
       </FilterSelect>
 
-      <FilterSelect label="Property Type" value="" disabled>
+      <FilterSelect
+        label="Property Type"
+        value={selectedPropertyType || ''}
+        onChange={(value) => updateParams({ propertyType: value || undefined })}
+      >
         <option value="">All types</option>
+        {propertyTypes.map((propertyType) => (
+          <option key={propertyType} value={propertyType}>
+            {formatFilterLabel(propertyType)}
+          </option>
+        ))}
       </FilterSelect>
 
-      <FilterSelect label="Transaction Type" value="" disabled>
+      <FilterSelect
+        label="Transaction Type"
+        value={selectedTransactionType || ''}
+        onChange={(value) => updateParams({ transactionType: value || undefined })}
+      >
         <option value="">All types</option>
+        {transactionTypes.map((transactionType) => (
+          <option key={transactionType} value={transactionType}>
+            {formatFilterLabel(transactionType)}
+          </option>
+        ))}
       </FilterSelect>
     </div>
   );

@@ -33,11 +33,11 @@ export default async function MovementsPage({ searchParams }: Props) {
   if (type) filterParams.type = type;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6 py-2">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Agent Movements</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-4xl font-semibold tracking-tight text-zinc-50">Agent Movements</h1>
+          <p className="mt-2 text-lg text-zinc-400">
             {total.toLocaleString()} movements tracked
             {type && <span> — filtered by {TYPE_LABELS[type] || type}</span>}
           </p>
@@ -45,10 +45,10 @@ export default async function MovementsPage({ searchParams }: Props) {
       </div>
 
       {/* Type filters */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2">
         <Link
           href="/movements"
-          className={`px-3 py-1.5 text-xs font-medium rounded-full ${!type ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${!type ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
         >
           All
         </Link>
@@ -56,24 +56,24 @@ export default async function MovementsPage({ searchParams }: Props) {
           <Link
             key={key}
             href={`/movements?type=${key}`}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full ${type === key ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${type === key ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
           >
             {label}
           </Link>
         ))}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {rows.map((movement) => (
-          <div key={movement.id} className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between">
+          <div key={movement.id} className="flex items-center justify-between rounded-[24px] border border-zinc-800 bg-zinc-950/90 px-5 py-4">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <Link href={`/agent/${movement.cea_number}`} className="text-sm font-medium text-blue-600 hover:underline">
+                <Link href={`/agent/${movement.cea_number}`} className="text-sm font-medium text-zinc-100 transition hover:text-white">
                   {movement.agent_name}
                 </Link>
-                <span className="text-xs text-gray-400">{movement.cea_number}</span>
+                <span className="text-xs text-zinc-500">{movement.cea_number}</span>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="mt-1 text-xs text-zinc-400">
                 {movement.type === 'agency_change' && (
                   <>{movement.previous_agency} → {movement.new_agency}</>
                 )}
@@ -86,17 +86,17 @@ export default async function MovementsPage({ searchParams }: Props) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${TYPE_COLORS[movement.type] || 'bg-gray-100 text-gray-600'}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-medium ${TYPE_COLORS[movement.type] || 'bg-zinc-800 text-zinc-300'}`}>
                 {TYPE_LABELS[movement.type] || movement.type}
               </span>
-              <span className="text-xs text-gray-400 w-24 text-right">
+              <span className="w-24 text-right text-xs text-zinc-500">
                 {new Date(movement.date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
             </div>
           </div>
         ))}
         {rows.length === 0 && (
-          <div className="text-center py-8 text-gray-400">No movements found</div>
+          <div className="py-8 text-center text-zinc-500">No movements found</div>
         )}
       </div>
 
