@@ -18,6 +18,8 @@ export async function getLeaderboard(params: {
   const year = params.year || new Date().getFullYear();
   const page = params.page || 1;
   const pageSize = params.pageSize || 25;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   const { data, error } = await supabase.rpc('get_leaderboard', {
     year_filter: String(year),
@@ -28,6 +30,32 @@ export async function getLeaderboard(params: {
 
   if (error) {
     console.error('getLeaderboard failed:', error.message);
+
+    // Fallback to precomputed leaderboard when yearly RPC hits DB timeout.
+    if (error.message.includes('statement timeout')) {
+      let fallbackQuery = supabase
+        .from('leaderboard_mv')
+        .select('rank, name, cea_number, agency, transactions', { count: 'exact' });
+
+      if (params.agency) {
+        fallbackQuery = fallbackQuery.eq('agency', params.agency);
+      }
+
+      const { data: fallbackData, count: fallbackCount, error: fallbackError } = await fallbackQuery
+        .order('rank', { ascending: true })
+        .range(from, to);
+
+      if (fallbackError) {
+        console.error('getLeaderboard fallback failed:', fallbackError.message);
+        return { rows: [], total: 0 };
+      }
+
+      return {
+        rows: (fallbackData || []) as LeaderboardRow[],
+        total: fallbackCount || 0,
+      };
+    }
+
     return { rows: [], total: 0 };
   }
 
