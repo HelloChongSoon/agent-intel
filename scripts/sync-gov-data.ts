@@ -1,12 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
+import { createReadStream, writeFileSync, unlinkSync } from 'fs';
+import { createInterface } from 'readline';
+import { Writable } from 'stream';
+import { pipeline } from 'stream/promises';
+import path from 'path';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const API_KEY = process.env.DATAGOV_API_KEY || '';
 const BATCH_SIZE = 500;
+const TMP_DIR = process.env.TMP_DIR || '/tmp';
+
+const DATASETS = {
+  agents: 'd_07c63be0f37e6e59c07a4ddc2fd87fcb',
+  transactions: 'd_ee7e46d3c57f7865790704632b0aef71',
+};
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`);
@@ -16,61 +28,173 @@ function txHash(ceaNumber: string, date: string, propType: string, txType: strin
   return createHash('md5').update(`${ceaNumber}|${date}|${propType}|${txType}|${role}|${location}`).digest('hex');
 }
 
-async function fetchJson(url: string): Promise<any> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-  return res.json();
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Download CSV via data.gov.sg v1 download API (returns S3 presigned URL)
+async function downloadDataset(datasetId: string, filename: string): Promise<string> {
+  const headers: Record<string, string> = {};
+  if (API_KEY) headers['x-api-key'] = API_KEY;
+
+  // Step 1: Initiate download
+  log(`  Initiating download for ${datasetId}...`);
+  const initRes = await fetch(
+    `https://api-open.data.gov.sg/v1/public/api/datasets/${datasetId}/initiate-download`,
+    { headers }
+  );
+  const initData = await initRes.json();
+
+  let downloadUrl: string;
+
+  if (initData.data?.url) {
+    // Direct URL returned
+    downloadUrl = initData.data.url;
+  } else {
+    // Need to poll
+    log('  Polling for download URL...');
+    for (let i = 0; i < 30; i++) {
+      await delay(2000);
+      const pollRes = await fetch(
+        `https://api-open.data.gov.sg/v1/public/api/datasets/${datasetId}/poll-download`,
+        { headers }
+      );
+      const pollData = await pollRes.json();
+      if (pollData.data?.url) {
+        downloadUrl = pollData.data.url;
+        break;
+      }
+      if (i === 29) throw new Error('Timed out waiting for download URL');
+    }
+  }
+
+  // Step 2: Download CSV
+  log(`  Downloading CSV...`);
+  const csvRes = await fetch(downloadUrl!);
+  if (!csvRes.ok) throw new Error(`Download failed: ${csvRes.status}`);
+
+  const filePath = path.join(TMP_DIR, filename);
+  const body = csvRes.body;
+  if (!body) throw new Error('No response body');
+
+  const chunks: Buffer[] = [];
+  const reader = body.getReader();
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(Buffer.from(value));
+    totalBytes += value.length;
+  }
+  writeFileSync(filePath, Buffer.concat(chunks));
+  log(`  Downloaded ${(totalBytes / 1024 / 1024).toFixed(1)}MB to ${filePath}`);
+
+  return filePath;
+}
+
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        fields.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+  }
+  fields.push(current.trim());
+  return fields;
 }
 
 async function batchUpsert(table: string, rows: any[], onConflict: string) {
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = rows.slice(i, i + BATCH_SIZE);
-    const { error } = await supabase.from(table).upsert(batch, { onConflict });
+    let batch = rows.slice(i, i + BATCH_SIZE);
+    // Deduplicate within batch by conflict key to avoid "cannot affect row a second time"
+    const seen = new Set<string>();
+    batch = batch.filter(row => {
+      const key = onConflict.split(',').map(k => row[k.trim()]).join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const { error } = await supabase.from(table).upsert(batch, { onConflict, ignoreDuplicates: true });
     if (error) {
+      // FK violations: insert rows one-by-one to skip bad references
+      if (error.code === '23503') {
+        let inserted = 0;
+        for (const row of batch) {
+          const { error: rowErr } = await supabase.from(table).upsert(row, { onConflict, ignoreDuplicates: true });
+          if (!rowErr) inserted++;
+        }
+        log(`  Batch ${i}: ${inserted}/${batch.length} rows (skipped FK violations)`);
+        continue;
+      }
       console.error(`Error upserting to ${table} at batch ${i}:`, error.message);
       throw error;
     }
   }
 }
 
-// data.gov.sg CKAN API endpoints
-const DATASETS = {
-  agents: 'd_93212e010e47e75a842d9040ef0be9c7',
-  transactions: 'd_ebc84e4af2add3a1b1a698e7e65a0245',
-};
-
 async function syncAgents() {
   log('Syncing agents from data.gov.sg...');
 
-  let offset = 0;
-  const limit = 10000;
+  const csvPath = await downloadDataset(DATASETS.agents, 'agents.csv');
+
+  const rl = createInterface({ input: createReadStream(csvPath) });
+  let headers: string[] = [];
+  let batch: any[] = [];
   let totalUpserted = 0;
 
-  while (true) {
-    const url = `https://data.gov.sg/api/action/datastore_search?resource_id=${DATASETS.agents}&limit=${limit}&offset=${offset}`;
-    const data = await fetchJson(url);
-    const records = data.result?.records || [];
+  for await (const line of rl) {
+    if (!headers.length) {
+      headers = parseCSVLine(line).map(h => h.toLowerCase().trim());
+      continue;
+    }
 
-    if (records.length === 0) break;
+    const fields = parseCSVLine(line);
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => { row[h] = fields[i] || ''; });
 
-    const agentRows = records.map((r: any) => ({
-      cea_number: r.registration_no || r.reg_num,
-      name: r.salesperson_name || r.name,
-      agency: r.estate_agent_name || r.agency || null,
-      registration_start: r.registration_start_date || null,
-      registration_end: r.registration_end_date || null,
+    batch.push({
+      cea_number: row.registration_no,
+      name: row.salesperson_name,
+      agency: row.estate_agent_name || null,
+      registration_start: row.registration_start_date || null,
+      registration_end: row.registration_end_date || null,
       total_transactions: 0,
-    }));
+    });
 
-    await batchUpsert('agents', agentRows, 'cea_number');
-    totalUpserted += agentRows.length;
-    offset += limit;
-
-    log(`  Agents: ${totalUpserted} upserted so far`);
-
-    if (records.length < limit) break;
+    if (batch.length >= BATCH_SIZE) {
+      await batchUpsert('agents', batch, 'cea_number');
+      totalUpserted += batch.length;
+      batch = [];
+      if (totalUpserted % 10000 === 0) log(`  Agents: ${totalUpserted} upserted`);
+    }
   }
 
+  if (batch.length > 0) {
+    await batchUpsert('agents', batch, 'cea_number');
+    totalUpserted += batch.length;
+  }
+
+  unlinkSync(csvPath);
   log(`  Agents sync complete: ${totalUpserted} total`);
   return totalUpserted;
 }
@@ -78,57 +202,57 @@ async function syncAgents() {
 async function syncTransactions() {
   log('Syncing transactions from data.gov.sg...');
 
-  let offset = 0;
-  const limit = 10000;
+  const csvPath = await downloadDataset(DATASETS.transactions, 'transactions.csv');
+
+  // CSV columns: salesperson_name, transaction_date, salesperson_reg_num,
+  //              property_type, transaction_type, represented, town, district, general_location
+  const rl = createInterface({ input: createReadStream(csvPath) });
+  let headers: string[] = [];
+  let batch: any[] = [];
   let totalUpserted = 0;
+  let skipped = 0;
 
-  while (true) {
-    const url = `https://data.gov.sg/api/action/datastore_search?resource_id=${DATASETS.transactions}&limit=${limit}&offset=${offset}`;
-    const data = await fetchJson(url);
-    const records = data.result?.records || [];
-
-    if (records.length === 0) break;
-
-    const txRows = records.map((r: any) => ({
-      cea_number: r.salesperson_reg_num || r.reg_num,
-      date: r.transaction_date || r.date || '',
-      property_type: r.property_type || null,
-      transaction_type: r.transaction_type || null,
-      role: r.representing || r.role || null,
-      location: r.project_name || r.location || null,
-      hash: txHash(
-        r.salesperson_reg_num || r.reg_num || '',
-        r.transaction_date || r.date || '',
-        r.property_type || '',
-        r.transaction_type || '',
-        r.representing || r.role || '',
-        r.project_name || r.location || ''
-      ),
-    }));
-
-    await batchUpsert('transactions', txRows, 'hash');
-    totalUpserted += txRows.length;
-    offset += limit;
-
-    if (offset % 50000 === 0) {
-      log(`  Transactions: ${totalUpserted} upserted so far`);
+  for await (const line of rl) {
+    if (!headers.length) {
+      headers = parseCSVLine(line).map(h => h.toLowerCase().trim());
+      continue;
     }
 
-    if (records.length < limit) break;
+    const fields = parseCSVLine(line);
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => { row[h] = fields[i] || ''; });
+
+    const ceaNumber = row.salesperson_reg_num;
+    if (!ceaNumber) { skipped++; continue; }
+
+    const location = [row.town, row.district, row.general_location].filter(Boolean).join(', ');
+
+    batch.push({
+      cea_number: ceaNumber,
+      date: row.transaction_date || '',
+      property_type: row.property_type || null,
+      transaction_type: row.transaction_type || null,
+      role: row.represented || null,
+      location: location || null,
+      hash: txHash(ceaNumber, row.transaction_date || '', row.property_type || '', row.transaction_type || '', row.represented || '', location || ''),
+    });
+
+    if (batch.length >= BATCH_SIZE) {
+      await batchUpsert('transactions', batch, 'hash');
+      totalUpserted += batch.length;
+      batch = [];
+      if (totalUpserted % 50000 === 0) log(`  Transactions: ${totalUpserted} upserted`);
+    }
   }
 
-  log(`  Transactions sync complete: ${totalUpserted} total`);
+  if (batch.length > 0) {
+    await batchUpsert('transactions', batch, 'hash');
+    totalUpserted += batch.length;
+  }
+
+  unlinkSync(csvPath);
+  log(`  Transactions sync complete: ${totalUpserted} total (${skipped} skipped)`);
   return totalUpserted;
-}
-
-async function updateTransactionCounts() {
-  log('Updating transaction counts on agents...');
-  const { error } = await supabase.rpc('refresh_leaderboard');
-  if (error) {
-    console.error('Error refreshing leaderboard:', error.message);
-  } else {
-    log('  Leaderboard materialized view refreshed');
-  }
 }
 
 async function main() {
@@ -139,12 +263,15 @@ async function main() {
     process.exit(1);
   }
 
+  if (!API_KEY) {
+    log('Warning: No DATAGOV_API_KEY set — downloads may be rate limited');
+  }
+
   const agentCount = await syncAgents();
   const txCount = await syncTransactions();
 
-  // Update transaction counts per agent
-  if (txCount > 0) {
-    // Update total_transactions for each agent based on actual transaction count
+  if (txCount > 0 || agentCount > 0) {
+    log('Refreshing leaderboard...');
     const { error } = await supabase.rpc('refresh_leaderboard');
     if (error) console.error('Error refreshing leaderboard:', error.message);
     else log('Leaderboard refreshed');

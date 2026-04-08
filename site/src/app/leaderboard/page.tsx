@@ -13,11 +13,14 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const agency = params.agency || undefined;
   const pageSize = 25;
 
-  const { rows, total } = await getLeaderboard({ page, pageSize, agency });
+  const { rows, total } = await getLeaderboard({ year, page, pageSize, agency });
   const totalPages = Math.ceil(total / pageSize);
 
   const filterParams: Record<string, string> = { year: String(year) };
   if (agency) filterParams.agency = agency;
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2016 }, (_, i) => currentYear - i);
 
   return (
     <div>
@@ -29,6 +32,19 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             {agency && <span> — filtered by {agency}</span>}
           </p>
         </div>
+      </div>
+
+      {/* Year filters */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {years.map((y) => (
+          <Link
+            key={y}
+            href={`/leaderboard?year=${y}${agency ? `&agency=${agency}` : ''}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full ${year === y ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            {y}
+          </Link>
+        ))}
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

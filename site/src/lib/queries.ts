@@ -9,32 +9,30 @@ export interface LeaderboardRow {
 }
 
 export async function getLeaderboard(params: {
+  year?: number;
   page?: number;
   pageSize?: number;
   agency?: string;
 }): Promise<{ rows: LeaderboardRow[]; total: number }> {
+  const year = params.year || new Date().getFullYear();
   const page = params.page || 1;
   const pageSize = params.pageSize || 25;
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
 
-  let query = supabase
-    .from('leaderboard_mv')
-    .select('cea_number, name, agency, transactions, rank', { count: 'exact' });
-
-  if (params.agency) {
-    query = query.eq('agency', params.agency);
-  }
-
-  const { data, count, error } = await query
-    .order('rank', { ascending: true })
-    .range(from, to);
+  const { data, error } = await supabase.rpc('get_leaderboard', {
+    year_filter: String(year),
+    agency_filter: params.agency || null,
+    page_num: page,
+    page_size: pageSize,
+  });
 
   if (error) throw error;
 
+  const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
+  const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+
   return {
-    rows: (data || []) as LeaderboardRow[],
-    total: count || 0,
+    rows: rows.map(({ total_count, ...rest }) => rest),
+    total,
   };
 }
 
