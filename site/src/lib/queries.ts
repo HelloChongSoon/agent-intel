@@ -31,7 +31,13 @@ export async function getLeaderboard(params: {
   const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
 
   return {
-    rows: rows.map(({ total_count, ...rest }) => rest),
+    rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
+      rank,
+      name,
+      cea_number,
+      agency,
+      transactions,
+    })),
     total,
   };
 }
