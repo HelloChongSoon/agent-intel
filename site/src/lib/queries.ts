@@ -31,11 +31,12 @@ export async function getLeaderboard(params: {
   if (error) {
     console.error('getLeaderboard failed:', error.message);
 
-    // Fallback to precomputed leaderboard when yearly RPC hits DB timeout.
+    // Fallback to live agents table when yearly RPC hits DB timeout.
     if (error.message.includes('statement timeout')) {
       let fallbackQuery = supabase
-        .from('leaderboard_mv')
-        .select('rank, name, cea_number, agency, transactions', { count: 'exact' });
+        .from('agents')
+        .select('cea_number, name, agency, total_transactions', { count: 'exact' })
+        .gt('total_transactions', 0);
 
       if (params.agency) {
         fallbackQuery = fallbackQuery.eq('agency', params.agency);
@@ -50,8 +51,16 @@ export async function getLeaderboard(params: {
         return { rows: [], total: 0 };
       }
 
+      const fallbackRows: LeaderboardRow[] = (fallbackData || []).map((row, index) => ({
+        rank: from + index + 1,
+        name: row.name,
+        cea_number: row.cea_number,
+        agency: row.agency || '',
+        transactions: Number(row.total_transactions || 0),
+      }));
+
       return {
-        rows: (fallbackData || []) as LeaderboardRow[],
+        rows: fallbackRows,
         total: fallbackCount || 0,
       };
     }
