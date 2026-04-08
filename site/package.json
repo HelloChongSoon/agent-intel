@@ -10,6 +10,7 @@
     "seed": "echo 'Use scripts/initial-load.ts instead'"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.102.1",
     "next": "14.2.35",
     "react": "^18",

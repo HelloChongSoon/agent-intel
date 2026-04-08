@@ -1,4 +1,5 @@
-import { supabase } from './supabase';
+import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 export interface LeaderboardRow {
   rank: number;
@@ -13,12 +14,14 @@ export interface LeaderboardFilterOptions {
   transactionTypes: string[];
 }
 
+async function getSupabase() {
+  const cookieStore = await cookies();
+  return createClient(cookieStore);
+}
+
 export async function getAvailableLeaderboardYears(minYear: number = 2017): Promise<number[]> {
   const currentYear = new Date().getFullYear();
-
-  if (!supabase) {
-    return Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
-  }
+  const supabase = await getSupabase();
 
   const { data, error } = await supabase.rpc('get_available_leaderboard_years');
 
@@ -43,7 +46,7 @@ export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<
 }
 
 export async function getLeaderboardFilterOptions(year?: number): Promise<LeaderboardFilterOptions> {
-  if (!supabase) return { propertyTypes: [], transactionTypes: [] };
+  const supabase = await getSupabase();
 
   const yearFilter = year ? String(year) : null;
   const [propertyTypesResult, transactionTypesResult] = await Promise.all([
@@ -78,7 +81,7 @@ export async function getLeaderboard(params: {
   propertyType?: string;
   transactionType?: string;
 }): Promise<{ rows: LeaderboardRow[]; total: number }> {
-  if (!supabase) return { rows: [], total: 0 };
+  const supabase = await getSupabase();
   const year = params.year || new Date().getFullYear();
   const page = params.page || 1;
   const pageSize = params.pageSize || 25;
@@ -166,7 +169,7 @@ export interface AgentRow {
 }
 
 export async function getAgent(ceaNumber: string): Promise<AgentRow | null> {
-  if (!supabase) return null;
+  const supabase = await getSupabase();
   const { data, error } = await supabase
     .from('agents')
     .select('*')
@@ -186,7 +189,7 @@ export interface TransactionRow {
 }
 
 export async function getAgentTransactions(ceaNumber: string): Promise<TransactionRow[]> {
-  if (!supabase) return [];
+  const supabase = await getSupabase();
   const { data, error } = await supabase
     .from('transactions')
     .select('date, property_type, transaction_type, role, location')
@@ -215,7 +218,7 @@ export async function getMovements(params: {
   pageSize?: number;
   type?: string;
 }): Promise<{ rows: MovementRow[]; total: number }> {
-  if (!supabase) return { rows: [], total: 0 };
+  const supabase = await getSupabase();
   const page = params.page || 1;
   const pageSize = params.pageSize || 20;
   const from = (page - 1) * pageSize;
@@ -245,7 +248,7 @@ export async function getMovements(params: {
 }
 
 export async function searchAgents(query: string, limit: number = 50): Promise<AgentRow[]> {
-  if (!supabase) return [];
+  const supabase = await getSupabase();
   // Use trigram similarity for fuzzy search on name, exact match on CEA number
   const { data, error } = await supabase
     .from('agents')
@@ -261,7 +264,7 @@ export async function searchAgents(query: string, limit: number = 50): Promise<A
 }
 
 export async function getAgencies(): Promise<string[]> {
-  if (!supabase) return [];
+  const supabase = await getSupabase();
   const { data, error } = await supabase
     .from('agents')
     .select('agency')
