@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getLeaderboard, getLatestLeaderboardYear } from '@/lib/queries';
+import { getAvailableLeaderboardYears, getLeaderboard, getLatestLeaderboardYear } from '@/lib/queries';
 import Pagination from '@/components/Pagination';
 
 interface Props {
@@ -12,16 +12,15 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const requestedYear = params.year ? parseInt(params.year, 10) : undefined;
   const agency = params.agency || undefined;
   const pageSize = 25;
-  const year = requestedYear ?? await getLatestLeaderboardYear();
+  const availableYears = await getAvailableLeaderboardYears();
+  const fallbackYear = availableYears[0] ?? await getLatestLeaderboardYear();
+  const year = requestedYear && availableYears.includes(requestedYear) ? requestedYear : fallbackYear;
 
   const { rows, total } = await getLeaderboard({ year, page, pageSize, agency });
   const totalPages = Math.ceil(total / pageSize);
 
   const filterParams: Record<string, string> = { year: String(year) };
   if (agency) filterParams.agency = agency;
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 2016 }, (_, i) => currentYear - i);
 
   return (
     <div>
@@ -37,7 +36,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
 
       {/* Year filters */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        {years.map((y) => (
+        {availableYears.map((y) => (
           <Link
             key={y}
             href={`/leaderboard?year=${y}${agency ? `&agency=${agency}` : ''}`}

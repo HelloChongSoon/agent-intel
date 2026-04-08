@@ -8,17 +8,33 @@ export interface LeaderboardRow {
   transactions: number;
 }
 
-export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<number> {
+export async function getAvailableLeaderboardYears(minYear: number = 2017): Promise<number[]> {
   const currentYear = new Date().getFullYear();
 
-  for (let year = currentYear; year >= minYear; year--) {
-    const { total } = await getLeaderboard({ year, page: 1, pageSize: 1 });
-    if (total > 0) {
-      return year;
-    }
+  if (!supabase) {
+    return Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
   }
 
-  return currentYear;
+  const { data, error } = await supabase.rpc('get_available_leaderboard_years');
+
+  if (error) {
+    console.error('getAvailableLeaderboardYears failed:', error.message);
+    return Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
+  }
+
+  const years = ((data || []) as Array<number | string>)
+    .map((value: number | string) => Number(value))
+    .filter((year: number) => Number.isInteger(year) && year >= minYear && year <= currentYear)
+    .sort((a, b) => b - a);
+
+  return years.length > 0 ? years : [currentYear];
+}
+
+export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<number> {
+  const currentYear = new Date().getFullYear();
+  const availableYears = await getAvailableLeaderboardYears(minYear);
+
+  return availableYears[0] || currentYear;
 }
 
 export async function getLeaderboard(params: {
@@ -44,8 +60,12 @@ export async function getLeaderboard(params: {
   if (error) {
     console.error('getLeaderboard failed:', error.message);
 
-    // Fallback to live agents table when yearly RPC hits DB timeout.
+    // Fallback to live agents table when the unfiltered RPC hits DB timeout.
     if (error.message.includes('statement timeout')) {
+      if (params.year) {
+        return { rows: [], total: 0 };
+      }
+
       let fallbackQuery = supabase
         .from('agents')
         .select('cea_number, name, agency, total_transactions', { count: 'exact' })
@@ -56,7 +76,8 @@ export async function getLeaderboard(params: {
       }
 
       const { data: fallbackData, count: fallbackCount, error: fallbackError } = await fallbackQuery
-        .order('rank', { ascending: true })
+        .order('total_transactions', { ascending: false })
+        .order('cea_number', { ascending: true })
         .range(from, to);
 
       if (fallbackError) {
