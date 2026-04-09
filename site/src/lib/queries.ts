@@ -230,6 +230,32 @@ export interface TransactionRow {
   location: string;
 }
 
+const MONTH_INDEX: Record<string, number> = {
+  JAN: 0,
+  FEB: 1,
+  MAR: 2,
+  APR: 3,
+  MAY: 4,
+  JUN: 5,
+  JUL: 6,
+  AUG: 7,
+  SEP: 8,
+  OCT: 9,
+  NOV: 10,
+  DEC: 11,
+};
+
+function getTransactionDateSortKey(value: string): number {
+  const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
+  if (periodMatch) {
+    const month = MONTH_INDEX[periodMatch[1]] ?? -1;
+    return Number(periodMatch[2]) * 12 + month;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? -1 : parsed;
+}
+
 export async function getAgentTransactions(ceaNumber: string): Promise<TransactionRow[]> {
   const supabase = await getSupabase();
   if (!supabase) return [];
@@ -243,7 +269,10 @@ export async function getAgentTransactions(ceaNumber: string): Promise<Transacti
     console.error('getAgentTransactions failed:', error.message);
     return [];
   }
-  return (data || []) as TransactionRow[];
+
+  return ((data || []) as TransactionRow[]).sort(
+    (a, b) => getTransactionDateSortKey(b.date) - getTransactionDateSortKey(a.date)
+  );
 }
 
 export interface MovementRow {

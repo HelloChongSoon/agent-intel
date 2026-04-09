@@ -1,5 +1,6 @@
 import { getAgent, getAgentTransactions } from '@/lib/queries';
 import { getAbsoluteUrl } from '@/lib/site';
+import RevealContact from '@/components/RevealContact';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -31,6 +32,26 @@ function formatLocation(location: string | null | undefined): string {
     .filter((part) => part && part !== '-');
 
   return parts.length > 0 ? parts.join(', ') : '—';
+}
+
+function splitLocation(location: string | null | undefined): { district: string; area: string } {
+  const formatted = formatLocation(location);
+  if (formatted === '—') {
+    return { district: '-', area: '—' };
+  }
+
+  const districtMatch = formatted.match(/^(\d{2}),\s*(.+)$/);
+  if (districtMatch) {
+    return {
+      district: districtMatch[1],
+      area: districtMatch[2],
+    };
+  }
+
+  return {
+    district: '-',
+    area: formatted,
+  };
 }
 
 function formatCount(value: number): string {
@@ -132,8 +153,6 @@ export default async function AgentPage({ params }: Props) {
       '@type': 'Person',
       name: agent.name,
       identifier: agent.cea_number,
-      telephone: agent.phone || undefined,
-      email: agent.email || undefined,
       worksFor: agent.agency ? { '@type': 'Organization', name: agent.agency } : undefined,
     },
   };
@@ -187,13 +206,13 @@ export default async function AgentPage({ params }: Props) {
           <div>
             <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Phone</div>
             <div className="mt-1 text-sm text-zinc-100">
-              {agent.phone ? <a href={`tel:${agent.phone}`} className="text-zinc-100 transition hover:text-white">{agent.phone}</a> : '—'}
+              <RevealContact kind="phone" value={agent.phone} />
             </div>
           </div>
           <div>
             <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Email</div>
             <div className="mt-1 text-sm text-zinc-100">
-              {agent.email ? <a href={`mailto:${agent.email}`} className="text-zinc-100 transition hover:text-white">{agent.email}</a> : '—'}
+              <RevealContact kind="email" value={agent.email} />
             </div>
           </div>
           <div>
@@ -284,19 +303,25 @@ export default async function AgentPage({ params }: Props) {
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Property</th>
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Type</th>
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">District</th>
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Location</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-900">
-            {transactions.slice(0, 100).map((tx, i) => (
-              <tr key={i} className="transition hover:bg-zinc-900/60">
-                <td className="px-6 py-3 text-xs text-zinc-300">{formatDateLabel(tx.date)}</td>
-                <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.property_type)}</td>
-                <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.transaction_type)}</td>
-                <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.role)}</td>
-                <td className="px-6 py-3 text-xs text-zinc-400">{formatLocation(tx.location)}</td>
-              </tr>
-            ))}
+            {transactions.slice(0, 100).map((tx, i) => {
+              const { district, area } = splitLocation(tx.location);
+
+              return (
+                <tr key={i} className="transition hover:bg-zinc-900/60">
+                  <td className="px-6 py-3 text-xs text-zinc-300">{formatDateLabel(tx.date)}</td>
+                  <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.property_type)}</td>
+                  <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.transaction_type)}</td>
+                  <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.role)}</td>
+                  <td className="px-6 py-3 text-xs text-zinc-300">{district}</td>
+                  <td className="px-6 py-3 text-xs text-zinc-400">{area}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {transactions.length > 100 && (
