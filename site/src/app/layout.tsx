@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
+import { getSiteUrl } from '@/lib/site';
 import "./globals.css";
 
 const geistSans = localFont({
@@ -15,6 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "Agent Intel — Singapore Property Agent Directory",
   description: "Search 39,000+ property agents, track rankings, and monitor agency movements in Singapore's real estate market.",
 };

@@ -14,6 +14,11 @@ export interface LeaderboardFilterOptions {
   transactionTypes: string[];
 }
 
+export interface AgencyOption {
+  name: string;
+  count: number;
+}
+
 function extractRpcScalar<T extends string | number>(
   value: unknown,
   key: string
@@ -303,7 +308,7 @@ export async function searchAgents(query: string, limit: number = 50): Promise<A
   return (data || []) as AgentRow[];
 }
 
-export async function getAgencies(): Promise<string[]> {
+export async function getAgencies(): Promise<AgencyOption[]> {
   const supabase = await getSupabase();
   if (!supabase) return [];
   const { data, error } = await supabase
@@ -318,7 +323,14 @@ export async function getAgencies(): Promise<string[]> {
     return [];
   }
 
-  // Deduplicate
-  const unique = [...new Set((data || []).map(r => r.agency).filter(Boolean))];
-  return unique as string[];
+  const counts = new Map<string, number>();
+  for (const row of data || []) {
+    const agency = row.agency;
+    if (!agency) continue;
+    counts.set(agency, (counts.get(agency) || 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }

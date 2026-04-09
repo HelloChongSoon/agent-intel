@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { searchAgents } from '@/lib/queries';
+import { getAbsoluteUrl } from '@/lib/site';
 import SearchBar from '@/components/SearchBar';
 
 interface Props {
@@ -10,9 +11,42 @@ export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const query = params.q || '';
   const results = query ? await searchAgents(query, 50) : [];
+  const url = getAbsoluteUrl(`/search${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'SearchResultsPage',
+    name: query ? `Search results for ${query}` : 'Search Agents',
+    url,
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: getAbsoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Search', item: getAbsoluteUrl('/search') },
+      ],
+    },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: results.length,
+      itemListElement: results.map((agent, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: getAbsoluteUrl(`/agent/${agent.cea_number}`),
+        item: {
+          '@type': 'Person',
+          name: agent.name,
+          identifier: agent.cea_number,
+          worksFor: agent.agency ? { '@type': 'Organization', name: agent.agency } : undefined,
+        },
+      })),
+    },
+  };
 
   return (
     <div className="space-y-6 py-2">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">Search Agents</h1>
         <p className="mt-2 text-lg text-zinc-400">Find profiles by name or CEA number.</p>

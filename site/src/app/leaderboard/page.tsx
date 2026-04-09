@@ -8,6 +8,7 @@ import {
   getLeaderboardFilterOptions,
   getLatestLeaderboardYear,
 } from '@/lib/queries';
+import { getAbsoluteUrl } from '@/lib/site';
 
 interface Props {
   searchParams: Promise<{ page?: string; year?: string; agency?: string; propertyType?: string; transactionType?: string }>;
@@ -63,9 +64,44 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   if (activeTransactionType) filterParams.transactionType = activeTransactionType;
   const showingFrom = total === 0 ? 0 : ((page - 1) * pageSize) + 1;
   const showingTo = total === 0 ? 0 : Math.min(page * pageSize, total);
+  const url = getAbsoluteUrl(`/leaderboard?${new URLSearchParams(filterParams).toString()}`);
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Agent Leaderboard ${year}`,
+    url,
+    description: 'Ranked Singapore property agents by transaction volume.',
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: getAbsoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Leaderboard', item: getAbsoluteUrl('/leaderboard') },
+      ],
+    },
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListOrder: 'https://schema.org/ItemListOrderAscending',
+      numberOfItems: rows.length,
+      itemListElement: rows.map((agent, index) => ({
+        '@type': 'ListItem',
+        position: showingFrom + index,
+        url: getAbsoluteUrl(`/agent/${agent.cea_number}`),
+        item: {
+          '@type': 'Person',
+          name: agent.name,
+          identifier: agent.cea_number,
+          worksFor: agent.agency ? { '@type': 'Organization', name: agent.agency } : undefined,
+        },
+      })),
+    },
+  };
 
   return (
     <div className="min-h-[calc(100vh-97px)] py-2 text-zinc-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
       <div className="mb-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] xl:items-start">
         <div className="max-w-2xl pt-1">
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">

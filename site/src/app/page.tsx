@@ -1,9 +1,28 @@
 import SearchBar from '@/components/SearchBar';
+import { getAbsoluteUrl } from '@/lib/site';
 import Link from 'next/link';
 
 export default function Home() {
+  const siteUrl = getAbsoluteUrl('/');
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Agent Intel',
+    url: siteUrl,
+    description: "Search property agents, track rankings, and monitor agency movements in Singapore's real estate market.",
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${getAbsoluteUrl('/search')}?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center gap-10 py-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
       <div className="max-w-3xl text-center">
         <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500">Singapore Real Estate Intelligence</p>
         <h1 className="mb-4 text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">Agent Intel</h1>

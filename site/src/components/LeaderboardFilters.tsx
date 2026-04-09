@@ -1,11 +1,12 @@
 'use client';
 
+import type { AgencyOption } from '@/lib/queries';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 interface LeaderboardFiltersProps {
   years: number[];
-  agencies: string[];
+  agencies: AgencyOption[];
   propertyTypes: string[];
   transactionTypes: string[];
   selectedYear: number;
@@ -31,6 +32,24 @@ function SelectChevron() {
       strokeLinejoin="round"
     >
       <path d="m5 7.5 5 5 5-5" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      className="h-4 w-4 text-zinc-500"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="8.5" cy="8.5" r="5.5" />
+      <path d="m13 13 4 4" />
     </svg>
   );
 }
@@ -61,6 +80,121 @@ function FilterSelect({
           {children}
         </select>
         <SelectChevron />
+      </div>
+    </label>
+  );
+}
+
+function AgencyCombobox({
+  agencies,
+  selectedAgency,
+  onChange,
+}: {
+  agencies: AgencyOption[];
+  selectedAgency?: string;
+  onChange: (value?: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery('');
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredAgencies = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return agencies;
+
+    return agencies.filter((agency) =>
+      agency.name.toLowerCase().includes(normalizedQuery)
+    );
+  }, [agencies, query]);
+
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-medium text-zinc-400">Current agency</span>
+      <div ref={containerRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen((value) => !value)}
+          className="flex h-14 w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/90 px-5 text-left text-lg font-medium text-zinc-100 transition hover:border-zinc-700 focus:border-zinc-600"
+        >
+          <span className="truncate pr-4">{selectedAgency || 'All agencies'}</span>
+          <SelectChevron />
+        </button>
+
+        {isOpen && (
+          <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/40">
+            <div className="border-b border-zinc-800 p-3">
+              <div className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/80 px-3 py-2">
+                <SearchIcon />
+                <input
+                  autoFocus
+                  type="text"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search agency..."
+                  className="w-full bg-transparent text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+                />
+              </div>
+            </div>
+
+            <div className="max-h-80 overflow-y-auto p-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(undefined);
+                  setIsOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
+                  !selectedAgency ? 'bg-zinc-100 text-zinc-950' : 'text-zinc-200 hover:bg-zinc-900'
+                }`}
+              >
+                <span>All agencies</span>
+                <span className={`${!selectedAgency ? 'text-zinc-700' : 'text-zinc-500'}`}>
+                  {agencies.length}
+                </span>
+              </button>
+
+              {filteredAgencies.map((agency) => (
+                <button
+                  key={agency.name}
+                  type="button"
+                  onClick={() => {
+                    onChange(agency.name);
+                    setIsOpen(false);
+                  }}
+                  className={`mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
+                    selectedAgency === agency.name ? 'bg-zinc-100 text-zinc-950' : 'text-zinc-200 hover:bg-zinc-900'
+                  }`}
+                >
+                  <span className="truncate pr-4">{agency.name}</span>
+                  <span className={`${selectedAgency === agency.name ? 'text-zinc-700' : 'text-zinc-500'}`}>
+                    {agency.count.toLocaleString()}
+                  </span>
+                </button>
+              ))}
+
+              {filteredAgencies.length === 0 && (
+                <div className="px-3 py-4 text-sm text-zinc-500">No agencies found.</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </label>
   );
@@ -113,18 +247,11 @@ export default function LeaderboardFilters({
         ))}
       </FilterSelect>
 
-      <FilterSelect
-        label="Current agency"
-        value={selectedAgency || ''}
+      <AgencyCombobox
+        agencies={agencies}
+        selectedAgency={selectedAgency}
         onChange={(value) => updateParams({ agency: value || undefined })}
-      >
-        <option value="">All agencies</option>
-        {agencies.map((agency) => (
-          <option key={agency} value={agency}>
-            {agency}
-          </option>
-        ))}
-      </FilterSelect>
+      />
 
       <FilterSelect
         label="Property Type"

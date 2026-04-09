@@ -1,4 +1,5 @@
 import { getAgent, getAgentTransactions } from '@/lib/queries';
+import { getAbsoluteUrl } from '@/lib/site';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -21,8 +22,36 @@ export default async function AgentPage({ params }: Props) {
     transactionTypes.set(tx.transaction_type, (transactionTypes.get(tx.transaction_type) || 0) + 1);
   }
 
+  const profileUrl = getAbsoluteUrl(`/agent/${ceaNumber}`);
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    name: agent.name,
+    url: profileUrl,
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: getAbsoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Leaderboard', item: getAbsoluteUrl('/leaderboard') },
+        { '@type': 'ListItem', position: 3, name: agent.name, item: profileUrl },
+      ],
+    },
+    mainEntity: {
+      '@type': 'Person',
+      name: agent.name,
+      identifier: agent.cea_number,
+      telephone: agent.phone || undefined,
+      email: agent.email || undefined,
+      worksFor: agent.agency ? { '@type': 'Organization', name: agent.agency } : undefined,
+    },
+  };
+
   return (
     <div className="space-y-6 py-2">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
       <Link href="/leaderboard" className="inline-block text-sm text-zinc-400 transition hover:text-zinc-100">
         &larr; Back to Leaderboard
       </Link>
