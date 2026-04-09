@@ -144,6 +144,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+CREATE OR REPLACE FUNCTION get_agency_options()
+RETURNS TABLE(agency TEXT, agent_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    a.agency,
+    COUNT(*)::BIGINT AS agent_count
+  FROM agents a
+  WHERE a.agency IS NOT NULL
+    AND a.agency <> ''
+  GROUP BY a.agency
+  ORDER BY agent_count DESC, a.agency ASC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Year-based leaderboard function
 CREATE OR REPLACE FUNCTION get_leaderboard(
   year_filter TEXT DEFAULT NULL,

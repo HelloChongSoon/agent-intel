@@ -1,8 +1,5 @@
--- Fix leaderboard year handling:
--- 1. Remove the hardcoded default year.
--- 2. Extract years safely from mixed text date formats.
--- 3. Expose only years that actually have data.
--- 4. Add an expression index so year-filtered leaderboard queries avoid timing out.
+-- Leaderboard filtering + agency option helpers
+-- Source of truth migration for Supabase CLI workflow.
 
 CREATE INDEX IF NOT EXISTS idx_transactions_year_text ON transactions (
   (
@@ -13,6 +10,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_year_text ON transactions (
     END
   )
 );
+
 CREATE INDEX IF NOT EXISTS idx_transactions_property_type ON transactions(property_type);
 CREATE INDEX IF NOT EXISTS idx_transactions_transaction_type ON transactions(transaction_type);
 

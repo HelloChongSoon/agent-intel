@@ -311,26 +311,23 @@ export async function searchAgents(query: string, limit: number = 50): Promise<A
 export async function getAgencies(): Promise<AgencyOption[]> {
   const supabase = await getSupabase();
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('agents')
-    .select('agency')
-    .not('agency', 'is', null)
-    .not('agency', 'eq', '')
-    .order('agency');
+  const { data, error } = await supabase.rpc('get_agency_options');
 
   if (error) {
     console.error('getAgencies failed:', error.message);
     return [];
   }
 
-  const counts = new Map<string, number>();
-  for (const row of data || []) {
-    const agency = row.agency;
-    if (!agency) continue;
-    counts.set(agency, (counts.get(agency) || 0) + 1);
-  }
-
-  return [...counts.entries()]
-    .map(([name, count]) => ({ name, count }))
+  return ((data || []) as Array<Record<string, unknown>>)
+    .map((row) => {
+      const name = extractRpcScalar<string>(row, 'agency');
+      const count = extractRpcScalar<number | string>(row, 'agent_count');
+      if (!name || count === null) return null;
+      return {
+        name,
+        count: Number(count),
+      };
+    })
+    .filter((value): value is AgencyOption => Boolean(value))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
