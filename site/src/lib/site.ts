@@ -1,11 +1,15 @@
 const fallbackUrl = 'https://agent-intel.vercel.app';
 
 export function getSiteUrl() {
-  return (
+  const rawUrl = (
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL ||
     fallbackUrl
-  ).replace(/\/$/, '');
+  ).trim();
+
+  const normalizedUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+
+  return normalizedUrl.replace(/\/$/, '');
 }
 
 export function getAbsoluteUrl(path: string = '/') {
