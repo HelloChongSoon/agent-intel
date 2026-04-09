@@ -28,6 +28,12 @@ function txHash(ceaNumber: string, date: string, propType: string, txType: strin
   return createHash('md5').update(`${ceaNumber}|${date}|${propType}|${txType}|${role}|${location}`).digest('hex');
 }
 
+function normalizeLocationPart(value: string | undefined): string | null {
+  const normalized = value?.trim();
+  if (!normalized || normalized === '-') return null;
+  return normalized;
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -178,7 +184,6 @@ async function syncAgents() {
       agency: row.estate_agent_name || null,
       registration_start: row.registration_start_date || null,
       registration_end: row.registration_end_date || null,
-      total_transactions: 0,
     });
 
     if (batch.length >= BATCH_SIZE) {
@@ -225,7 +230,13 @@ async function syncTransactions() {
     const ceaNumber = row.salesperson_reg_num;
     if (!ceaNumber) { skipped++; continue; }
 
-    const location = [row.town, row.district, row.general_location].filter(Boolean).join(', ');
+    const location = [
+      normalizeLocationPart(row.town),
+      normalizeLocationPart(row.district),
+      normalizeLocationPart(row.general_location),
+    ]
+      .filter((value): value is string => Boolean(value))
+      .join(', ');
 
     batch.push({
       cea_number: ceaNumber,
