@@ -160,15 +160,18 @@ function AgencyCombobox({
                   onChange(undefined);
                   setIsOpen(false);
                 }}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
+                className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-sm transition ${
                   !selectedAgency ? 'bg-zinc-100 text-zinc-950' : 'text-zinc-200 hover:bg-zinc-900'
                 }`}
               >
                 <span>All agencies</span>
-                <span className={`${!selectedAgency ? 'text-zinc-700' : 'text-zinc-500'}`}>
-                  {agencies.length}
-                </span>
               </button>
+
+              <div className="mx-3 my-2 border-t border-zinc-800 pt-2">
+                <span className="block px-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+                  Individual agencies
+                </span>
+              </div>
 
               {filteredAgencies.map((agency) => (
                 <button
