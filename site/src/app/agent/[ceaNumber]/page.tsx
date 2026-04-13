@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getAgent, getAgentTransactions, getComparableAgents } from '@/lib/queries';
+import { getAgent, getAgentMovements, getAgentTransactions, getComparableAgents, type MovementRow } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import RevealContact from '@/components/RevealContact';
@@ -127,6 +127,47 @@ function formatMonthBucket(value: string): string {
   return `${periodMatch[1].charAt(0)}${periodMatch[1].slice(1).toLowerCase()} ${periodMatch[2]}`;
 }
 
+function getMovementColumns(movement: MovementRow): {
+  from: { label: string; agencySlug?: string };
+  to: { label: string; agencySlug?: string };
+} {
+  if (movement.type === 'new_registration') {
+    return {
+      from: { label: 'New Registration' },
+      to: movement.new_agency
+        ? { label: movement.new_agency, agencySlug: slugifySegment(movement.new_agency) }
+        : { label: '—' },
+    };
+  }
+
+  if (movement.type === 'deregistration') {
+    return {
+      from: movement.previous_agency
+        ? { label: movement.previous_agency, agencySlug: slugifySegment(movement.previous_agency) }
+        : { label: '—' },
+      to: { label: 'Deregistered' },
+    };
+  }
+
+  if (movement.type === 'reregistration') {
+    return {
+      from: { label: 'Re-registration' },
+      to: movement.new_agency
+        ? { label: movement.new_agency, agencySlug: slugifySegment(movement.new_agency) }
+        : { label: '—' },
+    };
+  }
+
+  return {
+    from: movement.previous_agency
+      ? { label: movement.previous_agency, agencySlug: slugifySegment(movement.previous_agency) }
+      : { label: '—' },
+    to: movement.new_agency
+      ? { label: movement.new_agency, agencySlug: slugifySegment(movement.new_agency) }
+      : { label: '—' },
+  };
+}
+
 export default async function AgentPage({ params, searchParams }: Props) {
   const { ceaNumber } = await params;
   const resolvedSearchParams = await searchParams;
@@ -137,12 +178,15 @@ export default async function AgentPage({ params, searchParams }: Props) {
   const agent = await getAgent(ceaNumber);
   if (!agent) notFound();
 
-  const transactions = await getAgentTransactions(ceaNumber);
-  const comparableAgents = await getComparableAgents({
-    ceaNumber,
-    agency: agent.agency,
-    limit: 5,
-  });
+  const [transactions, comparableAgents, agentMovements] = await Promise.all([
+    getAgentTransactions(ceaNumber),
+    getComparableAgents({
+      ceaNumber,
+      agency: agent.agency,
+      limit: 5,
+    }),
+    getAgentMovements(ceaNumber, 8),
+  ]);
   const totalTransactions = Math.max(agent.total_transactions || 0, transactions.length);
 
   // Group transaction stats
@@ -454,6 +498,120 @@ export default async function AgentPage({ params, searchParams }: Props) {
           ))}
         </div>
       </div>
+
+      <section className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90">
+        <div className="border-b border-zinc-800 px-6 py-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-zinc-100">Movement History</h2>
+              <p className="mt-1 text-sm text-zinc-500">Agency transfers and registration events tied to this profile.</p>
+            </div>
+            <Link
+              href="/movements"
+              className="inline-flex items-center rounded-full border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-100"
+            >
+              View all movements
+            </Link>
+          </div>
+        </div>
+
+        {agentMovements.length > 0 ? (
+          <>
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-left">
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Date</th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">From</th>
+                    <th className="w-12 px-2 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">To</th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Destination</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900">
+                  {agentMovements.map((movement) => {
+                    const movementColumns = getMovementColumns(movement);
+
+                    return (
+                      <tr key={movement.id} className="transition hover:bg-zinc-900/60">
+                        <td className="px-6 py-4 text-sm text-zinc-300">{formatDateLabel(movement.date)}</td>
+                        <td className="px-6 py-4 text-sm text-zinc-100">
+                          {movementColumns.from.agencySlug ? (
+                            <Link
+                              href={`/agency/${movementColumns.from.agencySlug}`}
+                              className="transition hover:text-white"
+                            >
+                              {movementColumns.from.label}
+                            </Link>
+                          ) : movementColumns.from.label}
+                        </td>
+                        <td className="px-2 py-4 text-center text-zinc-500">-&gt;</td>
+                        <td className="px-6 py-4 text-sm text-zinc-100">
+                          {movementColumns.to.agencySlug ? (
+                            <Link
+                              href={`/agency/${movementColumns.to.agencySlug}`}
+                              className="text-blue-400 transition hover:text-blue-300"
+                            >
+                              {movementColumns.to.label}
+                            </Link>
+                          ) : movementColumns.to.label}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="divide-y divide-zinc-900 md:hidden">
+              {agentMovements.map((movement) => {
+                const movementColumns = getMovementColumns(movement);
+
+                return (
+                  <div key={movement.id} className="space-y-3 px-5 py-4">
+                    <div className="text-xs uppercase tracking-[0.16em] text-zinc-500">{formatDateLabel(movement.date)}</div>
+                    <div className="grid gap-3">
+                      <div>
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">From</div>
+                        <div className="mt-1 text-sm text-zinc-100">
+                          {movementColumns.from.agencySlug ? (
+                            <Link
+                              href={`/agency/${movementColumns.from.agencySlug}`}
+                              className="transition hover:text-white"
+                            >
+                              {movementColumns.from.label}
+                            </Link>
+                          ) : movementColumns.from.label}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">To</div>
+                        <div className="mt-1 text-sm text-zinc-100">
+                          {movementColumns.to.agencySlug ? (
+                            <Link
+                              href={`/agency/${movementColumns.to.agencySlug}`}
+                              className="text-blue-400 transition hover:text-blue-300"
+                            >
+                              {movementColumns.to.label}
+                            </Link>
+                          ) : movementColumns.to.label}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="flex min-h-[220px] flex-col items-center justify-center px-6 py-10 text-center">
+            <div className="text-3xl text-zinc-600">-&gt;</div>
+            <p className="mt-5 text-lg text-zinc-400">No movement history recorded for this agent</p>
+            <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">
+              We&apos;ll show agency transfers, new registrations, and deregistrations here when public movement records are available.
+            </p>
+          </div>
+        )}
+      </section>
 
       {/* Transaction History */}
       <div className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90">

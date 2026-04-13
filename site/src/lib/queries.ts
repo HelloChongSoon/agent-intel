@@ -329,6 +329,25 @@ export async function getMovements(params: {
   };
 }
 
+export async function getAgentMovements(ceaNumber: string, limit: number = 10): Promise<MovementRow[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('movements')
+    .select('*')
+    .eq('cea_number', ceaNumber)
+    .order('date', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('getAgentMovements failed:', error.message);
+    return [];
+  }
+
+  return (data || []) as MovementRow[];
+}
+
 export async function searchAgents(query: string, limit: number = 50): Promise<AgentRow[]> {
   const supabase = await getSupabase();
   if (!supabase) return [];
