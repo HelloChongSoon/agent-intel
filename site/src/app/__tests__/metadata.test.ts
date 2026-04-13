@@ -16,8 +16,8 @@ describe('page metadata', () => {
       })),
     }));
 
-    const module = await import('@/app/page');
-    const metadata = await module.generateMetadata();
+    const pageModule = await import('@/app/page');
+    const metadata = await pageModule.generateMetadata();
 
     expect(createPageMetadata).toHaveBeenCalledWith({
       title: 'PropNext Intel',
@@ -43,8 +43,8 @@ describe('page metadata', () => {
       })),
     }));
 
-    const module = await import('@/app/page');
-    await module.generateMetadata();
+    const pageModule = await import('@/app/page');
+    await pageModule.generateMetadata();
 
     expect(createPageMetadata).toHaveBeenCalledWith({
       title: 'PropNext',
@@ -60,8 +60,8 @@ describe('page metadata', () => {
       createPageMetadata,
     }));
 
-    const module = await import('@/app/guides/[slug]/page');
-    await module.generateMetadata({
+    const guideModule = await import('@/app/guides/[slug]/page');
+    await guideModule.generateMetadata({
       params: Promise.resolve({ slug: 'missing-guide' }),
     });
 
@@ -80,8 +80,8 @@ describe('page metadata', () => {
       createPageMetadata,
     }));
 
-    const module = await import('@/app/guides/[slug]/page');
-    await module.generateMetadata({
+    const guideModule = await import('@/app/guides/[slug]/page');
+    await guideModule.generateMetadata({
       params: Promise.resolve({ slug: 'how-to-verify-a-property-agent-in-singapore' }),
     });
 
