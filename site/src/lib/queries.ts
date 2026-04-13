@@ -294,10 +294,37 @@ export interface MovementRow {
   type: string;
 }
 
+export interface MovementInsights {
+  totalMovements: number;
+  countsByType: Record<string, number>;
+  weeklyBreakdown: Array<{
+    weekStart: string;
+    counts: Record<string, number>;
+    total: number;
+  }>;
+  topAgencyNetChange: Array<{
+    agency: string;
+    gained: number;
+    lost: number;
+    net: number;
+  }>;
+}
+
+function getWeekStart(value: string): string {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const day = date.getUTCDay();
+  const offset = day === 0 ? 6 : day - 1;
+  date.setUTCDate(date.getUTCDate() - offset);
+  return date.toISOString().slice(0, 10);
+}
+
 export async function getMovements(params: {
   page?: number;
   pageSize?: number;
   type?: string;
+  query?: string;
 }): Promise<{ rows: MovementRow[]; total: number }> {
   const supabase = await getSupabase();
   if (!supabase) return { rows: [], total: 0 };
@@ -314,6 +341,13 @@ export async function getMovements(params: {
     query = query.eq('type', params.type);
   }
 
+  if (params.query) {
+    const searchValue = params.query.replace(/[%_]/g, '').trim();
+    if (searchValue) {
+      query = query.or(`agent_name.ilike.%${searchValue}%,cea_number.ilike.%${searchValue}%`);
+    }
+  }
+
   const { data, count, error } = await query
     .order('date', { ascending: false })
     .range(from, to);
@@ -326,6 +360,91 @@ export async function getMovements(params: {
   return {
     rows: (data || []) as MovementRow[],
     total: count || 0,
+  };
+}
+
+export async function getMovementInsights(weeks: number = 10): Promise<MovementInsights> {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    return {
+      totalMovements: 0,
+      countsByType: {},
+      weeklyBreakdown: [],
+      topAgencyNetChange: [],
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('movements')
+    .select('date, type, previous_agency, new_agency')
+    .order('date', { ascending: false })
+    .limit(20000);
+
+  if (error) {
+    console.error('getMovementInsights failed:', error.message);
+    return {
+      totalMovements: 0,
+      countsByType: {},
+      weeklyBreakdown: [],
+      topAgencyNetChange: [],
+    };
+  }
+
+  const countsByType = new Map<string, number>();
+  const weeklyCounts = new Map<string, Map<string, number>>();
+  const agencyTotals = new Map<string, { gained: number; lost: number }>();
+
+  for (const row of (data || []) as Array<{
+    date: string;
+    type: string | null;
+    previous_agency: string | null;
+    new_agency: string | null;
+  }>) {
+    const type = row.type || 'unknown';
+    countsByType.set(type, (countsByType.get(type) || 0) + 1);
+
+    const weekStart = getWeekStart(row.date);
+    const weekBucket = weeklyCounts.get(weekStart) || new Map<string, number>();
+    weekBucket.set(type, (weekBucket.get(type) || 0) + 1);
+    weeklyCounts.set(weekStart, weekBucket);
+
+    if (row.new_agency) {
+      const bucket = agencyTotals.get(row.new_agency) || { gained: 0, lost: 0 };
+      bucket.gained += 1;
+      agencyTotals.set(row.new_agency, bucket);
+    }
+
+    if (row.previous_agency) {
+      const bucket = agencyTotals.get(row.previous_agency) || { gained: 0, lost: 0 };
+      bucket.lost += 1;
+      agencyTotals.set(row.previous_agency, bucket);
+    }
+  }
+
+  const weeklyBreakdown = [...weeklyCounts.entries()]
+    .sort((a, b) => Date.parse(a[0]) - Date.parse(b[0]))
+    .slice(-weeks)
+    .map(([weekStart, bucket]) => {
+      const counts = Object.fromEntries(bucket.entries());
+      const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+      return { weekStart, counts, total };
+    });
+
+  const topAgencyNetChange = [...agencyTotals.entries()]
+    .map(([agency, counts]) => ({
+      agency,
+      gained: counts.gained,
+      lost: counts.lost,
+      net: counts.gained - counts.lost,
+    }))
+    .sort((a, b) => Math.abs(b.net) - Math.abs(a.net) || b.gained - a.gained || a.agency.localeCompare(b.agency))
+    .slice(0, 8);
+
+  return {
+    totalMovements: (data || []).length,
+    countsByType: Object.fromEntries(countsByType.entries()),
+    weeklyBreakdown,
+    topAgencyNetChange,
   };
 }
 
