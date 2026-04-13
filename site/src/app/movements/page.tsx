@@ -1,10 +1,20 @@
 import Link from 'next/link';
 import { getMovements } from '@/lib/queries';
-import { getAbsoluteUrl } from '@/lib/site';
+import { createPageMetadata } from '@/lib/seo';
+import { formatLabel } from '@/lib/format';
+import { getRequestAbsoluteUrl } from '@/lib/site';
 import Pagination from '@/components/Pagination';
 
 interface Props {
   searchParams: Promise<{ page?: string; type?: string }>;
+}
+
+export async function generateMetadata() {
+  return createPageMetadata({
+    title: 'Agent Movements',
+    description: 'Track property agent movements in Singapore, including agency transfers, new registrations, and related activity.',
+    path: '/movements',
+  });
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -32,7 +42,9 @@ export default async function MovementsPage({ searchParams }: Props) {
 
   const filterParams: Record<string, string> = {};
   if (type) filterParams.type = type;
-  const url = getAbsoluteUrl(`/movements${type ? `?type=${encodeURIComponent(type)}` : ''}`);
+  const homeUrl = await getRequestAbsoluteUrl('/');
+  const movementsUrl = await getRequestAbsoluteUrl('/movements');
+  const url = await getRequestAbsoluteUrl(`/movements${type ? `?type=${encodeURIComponent(type)}` : ''}`);
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -41,8 +53,8 @@ export default async function MovementsPage({ searchParams }: Props) {
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: getAbsoluteUrl('/') },
-        { '@type': 'ListItem', position: 2, name: 'Movements', item: getAbsoluteUrl('/movements') },
+        { '@type': 'ListItem', position: 1, name: 'Home', item: homeUrl },
+        { '@type': 'ListItem', position: 2, name: 'Movements', item: movementsUrl },
       ],
     },
     mainEntity: {
@@ -51,7 +63,7 @@ export default async function MovementsPage({ searchParams }: Props) {
       itemListElement: rows.map((movement, index) => ({
         '@type': 'ListItem',
         position: ((page - 1) * pageSize) + index + 1,
-        url: getAbsoluteUrl(`/agent/${movement.cea_number}`),
+        url: `${homeUrl.replace(/\/$/, '')}/agent/${movement.cea_number}`,
         item: {
           '@type': 'Person',
           name: movement.agent_name,
@@ -73,6 +85,9 @@ export default async function MovementsPage({ searchParams }: Props) {
           <p className="mt-2 text-lg text-zinc-400">
             {total.toLocaleString()} movements tracked
             {type && <span> — filtered by {TYPE_LABELS[type] || type}</span>}
+          </p>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-500">
+            Direct answer: movement records tell consumers when an agent changed agencies, entered the market, or reappeared in public records, which adds context to the agent profile rather than replacing it.
           </p>
         </div>
       </div>
@@ -132,6 +147,29 @@ export default async function MovementsPage({ searchParams }: Props) {
           <div className="py-8 text-center text-zinc-500">No movements found</div>
         )}
       </div>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+          <h2 className="text-xl font-semibold text-zinc-100">What this means</h2>
+          <p className="mt-3 text-sm leading-7 text-zinc-400">
+            Consumers should read movement data as business context. A transfer or registration event does not automatically say whether an agent is better or worse, but it does help explain the environment they are operating in.
+          </p>
+        </div>
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+          <h2 className="text-xl font-semibold text-zinc-100">Latest activity types</h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {Object.keys(TYPE_LABELS).map((movementType) => (
+              <Link
+                key={movementType}
+                href={`/movements?type=${movementType}`}
+                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
+              >
+                {formatLabel(movementType)}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <Pagination currentPage={page} totalPages={totalPages} basePath="/movements" searchParams={filterParams} />
     </div>

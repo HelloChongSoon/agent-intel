@@ -1,8 +1,26 @@
-import { type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { getCanonicalHost, getVariantForHost, isRootShellPath, normalizeHost } from '@/lib/hosts';
 import { updateSession } from '@/utils/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  const host = normalizeHost(request.headers.get('x-forwarded-host') || request.headers.get('host'));
+  const pathname = request.nextUrl.pathname;
+  const variant = getVariantForHost(host);
+
+  if (variant === 'root' && !isRootShellPath(pathname)) {
+    const url = request.nextUrl.clone();
+    url.host = getCanonicalHost('intel');
+    url.protocol = 'https';
+    return NextResponse.redirect(url, 308);
+  }
+
+  const response = await updateSession(request);
+
+  if (variant === 'cats') {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+
+  return response;
 }
 
 export const config = {

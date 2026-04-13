@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
+import { slugifySegment } from '@/lib/format';
 
 export interface LeaderboardRow {
   rank: number;
@@ -17,6 +18,14 @@ export interface LeaderboardFilterOptions {
 export interface AgencyOption {
   name: string;
   count: number;
+}
+
+export interface AgencySummary {
+  agency: AgencyOption;
+  year: number;
+  leaderboard: { rows: LeaderboardRow[]; total: number };
+  recentMovements: MovementRow[];
+  propertyMix: Array<{ propertyType: string; count: number }>;
 }
 
 function extractRpcScalar<T extends string | number>(
@@ -359,4 +368,165 @@ export async function getAgencies(): Promise<AgencyOption[]> {
     })
     .filter((value): value is AgencyOption => Boolean(value))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+export async function getAllAgentRefs(): Promise<Array<{ cea_number: string; updated_at?: string | null }>> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('agents')
+    .select('cea_number, updated_at')
+    .order('cea_number', { ascending: true });
+
+  if (error) {
+    console.error('getAllAgentRefs failed:', error.message);
+    return [];
+  }
+
+  return (data || []) as Array<{ cea_number: string; updated_at?: string | null }>;
+}
+
+export async function getAgencyBySlug(slug: string): Promise<AgencyOption | null> {
+  const agencies = await getAgencies();
+  return agencies.find((agency) => slugifySegment(agency.name) === slug) || null;
+}
+
+export async function getAgencyMovements(agency: string, limit: number = 10): Promise<MovementRow[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const [previousAgencyResult, newAgencyResult] = await Promise.all([
+    supabase
+      .from('movements')
+      .select('*')
+      .eq('previous_agency', agency)
+      .order('date', { ascending: false })
+      .limit(limit),
+    supabase
+      .from('movements')
+      .select('*')
+      .eq('new_agency', agency)
+      .order('date', { ascending: false })
+      .limit(limit),
+  ]);
+
+  if (previousAgencyResult.error) {
+    console.error('getAgencyMovements previous agency failed:', previousAgencyResult.error.message);
+  }
+
+  if (newAgencyResult.error) {
+    console.error('getAgencyMovements new agency failed:', newAgencyResult.error.message);
+  }
+
+  const deduped = new Map<number, MovementRow>();
+  for (const row of [...(previousAgencyResult.data || []), ...(newAgencyResult.data || [])] as MovementRow[]) {
+    deduped.set(row.id, row);
+  }
+
+  return [...deduped.values()]
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+    .slice(0, limit);
+}
+
+export async function getAgencyPropertyMix(agency: string): Promise<Array<{ propertyType: string; count: number }>> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('property_type, agents!inner(agency)')
+    .eq('agents.agency', agency)
+    .limit(5000);
+
+  if (error) {
+    console.error('getAgencyPropertyMix failed:', error.message);
+    return [];
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of (data || []) as Array<{ property_type?: string | null }>) {
+    const propertyType = row.property_type;
+    if (!propertyType) continue;
+    counts.set(propertyType, (counts.get(propertyType) || 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .map(([propertyType, count]) => ({ propertyType, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export async function getAgencySummary(slug: string): Promise<AgencySummary | null> {
+  const agency = await getAgencyBySlug(slug);
+  if (!agency) return null;
+
+  const year = await getLatestLeaderboardYear();
+  const [leaderboard, recentMovements, propertyMix] = await Promise.all([
+    getLeaderboard({ year, agency: agency.name, pageSize: 10 }),
+    getAgencyMovements(agency.name, 8),
+    getAgencyPropertyMix(agency.name),
+  ]);
+
+  return {
+    agency,
+    year,
+    leaderboard,
+    recentMovements,
+    propertyMix,
+  };
+}
+
+export async function getAgencyAgents(agency: string, limit: number = 6): Promise<AgentRow[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('agents')
+    .select('*')
+    .eq('agency', agency)
+    .order('total_transactions', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('getAgencyAgents failed:', error.message);
+    return [];
+  }
+
+  return (data || []) as AgentRow[];
+}
+
+export async function getComparableAgents(params: {
+  ceaNumber: string;
+  agency?: string | null;
+  limit?: number;
+}): Promise<AgentRow[]> {
+  const supabase = await getSupabase();
+  if (!supabase || !params.agency) return [];
+
+  const { data, error } = await supabase
+    .from('agents')
+    .select('*')
+    .eq('agency', params.agency)
+    .neq('cea_number', params.ceaNumber)
+    .order('total_transactions', { ascending: false })
+    .limit(params.limit || 5);
+
+  if (error) {
+    console.error('getComparableAgents failed:', error.message);
+    return [];
+  }
+
+  return (data || []) as AgentRow[];
+}
+
+export async function getPropertyTypeBySlug(slug: string): Promise<string | null> {
+  const year = await getLatestLeaderboardYear();
+  const { propertyTypes } = await getLeaderboardFilterOptions(year);
+  return propertyTypes.find((value) => slugifySegment(value) === slug) || null;
+}
+
+export async function getTransactionTypeBySlug(slug: string): Promise<string | null> {
+  const year = await getLatestLeaderboardYear();
+  const { transactionTypes } = await getLeaderboardFilterOptions(year);
+  return transactionTypes.find((value) => slugifySegment(value) === slug) || null;
 }

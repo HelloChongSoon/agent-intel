@@ -5,13 +5,20 @@ interface PaginationProps {
   totalPages: number;
   basePath: string;
   searchParams?: Record<string, string>;
+  pageParam?: string;
 }
 
-export default function Pagination({ currentPage, totalPages, basePath, searchParams = {} }: PaginationProps) {
+export default function Pagination({
+  currentPage,
+  totalPages,
+  basePath,
+  searchParams = {},
+  pageParam = 'page',
+}: PaginationProps) {
   if (totalPages <= 1) return null;
 
   function buildHref(page: number): string {
-    const params = new URLSearchParams({ ...searchParams, page: String(page) });
+    const params = new URLSearchParams({ ...searchParams, [pageParam]: String(page) });
     return `${basePath}?${params.toString()}`;
   }
 

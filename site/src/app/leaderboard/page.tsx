@@ -8,10 +8,20 @@ import {
   getLeaderboardFilterOptions,
   getLatestLeaderboardYear,
 } from '@/lib/queries';
-import { getAbsoluteUrl } from '@/lib/site';
+import { createPageMetadata } from '@/lib/seo';
+import { formatLabel, slugifySegment } from '@/lib/format';
+import { getRequestAbsoluteUrl } from '@/lib/site';
 
 interface Props {
   searchParams: Promise<{ page?: string; year?: string; agency?: string; propertyType?: string; transactionType?: string }>;
+}
+
+export async function generateMetadata() {
+  return createPageMetadata({
+    title: 'Agent Leaderboard',
+    description: 'Top property agents in Singapore by transaction volume, with agency, property-type, and deal-type filters.',
+    path: '/leaderboard',
+  });
 }
 
 function TrophyIcon({ rank }: { rank: number }) {
@@ -64,7 +74,9 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   if (activeTransactionType) filterParams.transactionType = activeTransactionType;
   const showingFrom = total === 0 ? 0 : ((page - 1) * pageSize) + 1;
   const showingTo = total === 0 ? 0 : Math.min(page * pageSize, total);
-  const url = getAbsoluteUrl(`/leaderboard?${new URLSearchParams(filterParams).toString()}`);
+  const homeUrl = await getRequestAbsoluteUrl('/');
+  const leaderboardUrl = await getRequestAbsoluteUrl('/leaderboard');
+  const url = await getRequestAbsoluteUrl(`/leaderboard?${new URLSearchParams(filterParams).toString()}`);
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -74,8 +86,8 @@ export default async function LeaderboardPage({ searchParams }: Props) {
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: getAbsoluteUrl('/') },
-        { '@type': 'ListItem', position: 2, name: 'Leaderboard', item: getAbsoluteUrl('/leaderboard') },
+        { '@type': 'ListItem', position: 1, name: 'Home', item: homeUrl },
+        { '@type': 'ListItem', position: 2, name: 'Leaderboard', item: leaderboardUrl },
       ],
     },
     mainEntity: {
@@ -85,7 +97,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       itemListElement: rows.map((agent, index) => ({
         '@type': 'ListItem',
         position: showingFrom + index,
-        url: getAbsoluteUrl(`/agent/${agent.cea_number}`),
+        url: `${homeUrl.replace(/\/$/, '')}/agent/${agent.cea_number}`,
         item: {
           '@type': 'Person',
           name: agent.name,
@@ -110,6 +122,9 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           <p className="mt-2 text-lg text-zinc-400">
             Top agents by transaction volume in Singapore
           </p>
+          <p className="mt-4 text-sm leading-7 text-zinc-500">
+            Direct answer: use the main leaderboard for broad discovery, then switch to agency, property-type, or deal-type pages when you want a more relevant consumer comparison.
+          </p>
         </div>
 
         <LeaderboardFilters
@@ -123,6 +138,48 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           selectedTransactionType={activeTransactionType}
         />
       </div>
+
+      <section className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+          <h2 className="text-xl font-semibold text-zinc-100">Top agency pages</h2>
+          <p className="mt-2 text-sm text-zinc-500">Compare individual leaders inside the biggest agencies instead of relying on brand alone.</p>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {agencies.slice(0, 6).map((agencyOption) => (
+              <Link
+                key={agencyOption.name}
+                href={`/agency/${slugifySegment(agencyOption.name)}`}
+                className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-100"
+              >
+                {agencyOption.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+          <h2 className="text-xl font-semibold text-zinc-100">Explore ranking slices</h2>
+          <p className="mt-2 text-sm text-zinc-500">These pages are easier to compare when your transaction is already specific.</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {propertyTypes.slice(0, 5).map((propertyTypeValue) => (
+              <Link
+                key={propertyTypeValue}
+                href={`/property-type/${slugifySegment(propertyTypeValue)}`}
+                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
+              >
+                {formatLabel(propertyTypeValue)}
+              </Link>
+            ))}
+            {transactionTypes.slice(0, 4).map((transactionTypeValue) => (
+              <Link
+                key={transactionTypeValue}
+                href={`/transaction-type/${slugifySegment(transactionTypeValue)}`}
+                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
+              >
+                {formatLabel(transactionTypeValue)}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
         <div className="border-b border-zinc-800 px-6 py-6 md:px-8">

@@ -1,0 +1,45 @@
+export function formatCount(value: number): string {
+  return value.toLocaleString('en-SG');
+}
+
+export function formatLabel(value: string | null | undefined): string {
+  if (!value) return '—';
+
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+export function slugifySegment(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
+
+export function formatDateLabel(value: string | null | undefined): string {
+  if (!value) return '—';
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString('en-SG', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+  }
+
+  const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
+  if (periodMatch) {
+    const [, month, year] = periodMatch;
+    return `${month.charAt(0)}${month.slice(1).toLowerCase()} ${year}`;
+  }
+
+  return value;
+}

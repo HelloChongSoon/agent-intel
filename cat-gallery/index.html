@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Bryson's Cat Gallery</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white min-h-screen">
+  <h1 class="text-center text-2xl font-semibold text-white my-5">🐱 Bryson's Cat Gallery 🐱</h1>
+  <div class="maincontent">
+    <div id="status" class="hidden text-center px-3 py-2 mx-5 mb-2 rounded-lg text-green-300 bg-green-900/40 border border-green-700 text-sm">Fetching new cats…</div>
+    <div id="grid" class="imgrid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 p-5 max-w-[1200px] mx-auto">
+      <div class="loading text-center p-10 text-lg text-gray-300 col-span-full">Loading adorable cats...</div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+      <div class="relative max-w-3xl w-[90%]">
+        <button id="modalClose" class="absolute -top-3 -right-3 bg-white text-black rounded-full w-8 h-8 flex items-center justify-center shadow hover:opacity-90">✕</button>
+        <img id="modalImage" src="" alt="Cat image" class="w-full h-auto rounded-lg shadow-2xl" />
+      </div>
+    </div>
+  </div>
+
+<script>
+  // API base URL and desired image count
+  const API_BASE = `/api/cats`;
+  const TARGET_COUNT = 24;
+
+  function renderCats(data) {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    data.forEach((imageData, index) => {
+      const image = document.createElement('img');
+      image.src = imageData.url;
+      image.alt = `Cat image ${index + 1}`;
+      image.loading = 'lazy';
+      image.className = 'w-full aspect-square object-cover rounded-lg';
+      image.addEventListener('click', () => openModal(imageData.url));
+      const gridCell = document.createElement('div');
+      gridCell.className = 'rounded-xl overflow-hidden bg-neutral-900 ring-1 ring-white/10 hover:ring-white/20 transition shadow-md hover:shadow-lg cursor-pointer';
+      gridCell.appendChild(image);
+      grid.appendChild(gridCell);
+    });
+  }
+
+  function loadCats(options = { isRefresh: false }) {
+    const { isRefresh } = options;
+    const grid = document.getElementById('grid');
+    const status = document.getElementById('status');
+    if (isRefresh) {
+      status.textContent = 'Fetching new cats…';
+      status.classList.remove('hidden');
+    } else {
+      grid.innerHTML = '<div class="loading text-center p-10 text-lg text-gray-300 col-span-full">Loading adorable cats...</div>';
+    }
+
+    // If you have an API key, set it in localStorage as 'CAT_API_KEY'
+    const apiKey = localStorage.getItem('CAT_API_KEY');
+
+    // Helper to fetch a page with a specific limit
+    const fetchPage = (limit) => {
+      const url = `${API_BASE}?limit=${limit}`;
+      const opts = {}; // Vercel function handles the API key
+      return fetch(url, opts).then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      });
+    };
+
+    // Strategy:
+    // Vercel function will use env key; we can request all at once
+    const performFetch = async () => {
+      return fetchPage(TARGET_COUNT);
+    };
+
+    performFetch()
+      .then(data => {
+        renderCats(data);
+      })
+      .catch(error => {
+        console.error('Error fetching cats:', error);
+        grid.innerHTML = '<div class="error text-center p-10 text-lg text-red-300 col-span-full">Failed to load cats. Please try again.</div>';
+      })
+      .finally(() => {
+        if (isRefresh) {
+          status.classList.add('hidden');
+        }
+      });
+  }
+
+  // Initial load
+  loadCats();
+
+  // Auto-refresh every 30 minutes
+  setInterval(() => {
+    loadCats({ isRefresh: true });
+  }, 30 * 60 * 1000);
+
+  // Modal logic
+  const modal = document.getElementById('modal');
+  const modalImage = document.getElementById('modalImage');
+  const modalClose = document.getElementById('modalClose');
+
+  function openModal(url) {
+    modalImage.src = url;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.addEventListener('keydown', onEscClose);
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modalImage.src = '';
+    document.removeEventListener('keydown', onEscClose);
+  }
+
+  function onEscClose(e) {
+    if (e.key === 'Escape') closeModal();
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  
+  // Vercel Speed Insights for static HTML (ESM via CDN)
+  // Works on Vercel deployments; harmless locally
+  try {
+    const moduleUrl = 'https://esm.sh/@vercel/speed-insights@latest';
+    import(moduleUrl).then(({ injectSpeedInsights }) => {
+      if (typeof injectSpeedInsights === 'function') {
+        injectSpeedInsights();
+      }
+    }).catch(() => {});
+  } catch (_) {}
+</script>
+</body>
+</html>
