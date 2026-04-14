@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { getLeaderboard, getLatestLeaderboardYear, getPropertyTypeBySlug } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { formatCount, formatLabel } from '@/lib/format';
@@ -44,6 +45,7 @@ export default async function PropertyTypePage({ params }: Props) {
     <div className="space-y-8 py-4">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <div>
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Leaderboard', href: '/leaderboard' }, { label }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Property Type</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Top {label} agents in Singapore</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 
@@ -23,6 +24,7 @@ export default async function ContactPage() {
     <div className="mx-auto max-w-3xl space-y-8 py-4">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <div>
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Contact</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Get in touch</h1>
         <p className="mt-4 text-lg text-zinc-400">

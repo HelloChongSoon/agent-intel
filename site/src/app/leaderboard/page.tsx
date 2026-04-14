@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import LeaderboardFilters from '@/components/LeaderboardFilters';
 import LeaderboardPagination from '@/components/LeaderboardPagination';
 import LeaderboardAgentLink from '@/components/LeaderboardAgentLink';
@@ -117,6 +118,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       />
       <div className="mb-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] xl:items-start">
         <div className="max-w-2xl pt-1">
+          <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Leaderboard' }]} />
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
               Agent Leaderboard
           </h1>

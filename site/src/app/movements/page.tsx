@@ -3,6 +3,7 @@ import { getMovementInsights, getMovements } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { formatDateLabel, formatLabel, slugifySegment } from '@/lib/format';
 import { getRequestAbsoluteUrl } from '@/lib/site';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import Pagination from '@/components/Pagination';
 import MovementsSearchForm from '@/components/MovementsSearchForm';
 import MovementsTypeFilters from '@/components/MovementsTypeFilters';
@@ -118,6 +119,7 @@ export default async function MovementsPage({ searchParams }: Props) {
 
       <div className="flex items-center justify-between">
         <div>
+          <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Movements' }]} />
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">Agent Movements</h1>
           <p className="mt-2 text-lg text-zinc-400">
             {formatCompactNumber(insights.totalMovements)} movements tracked

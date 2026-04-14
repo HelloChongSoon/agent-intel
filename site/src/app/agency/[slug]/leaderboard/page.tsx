@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import Pagination from '@/components/Pagination';
 import { getAgencyBySlug, getLeaderboard, getLatestLeaderboardYear } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
@@ -47,6 +48,7 @@ export default async function AgencyLeaderboardPage({ params, searchParams }: Pr
     <div className="space-y-8 py-4">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <div>
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Agencies', href: '/leaderboard' }, { label: agency.name, href: `/agency/${slug}` }, { label: 'Leaderboard' }]} />
         <Link href={`/agency/${slug}`} className="text-sm text-zinc-400 transition hover:text-zinc-100">&larr; Back to agency overview</Link>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">{agency.name} leaderboard</h1>
         <p className="mt-4 text-lg text-zinc-400">Top visible agents within {agency.name} for {year}.</p>

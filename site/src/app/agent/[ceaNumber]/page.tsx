@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getAgent, getAgentMovements, getAgentTransactions, getComparableAgents, type MovementRow } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import RevealContact from '@/components/RevealContact';
 import Pagination from '@/components/Pagination';
 import { notFound } from 'next/navigation';
@@ -393,6 +394,13 @@ export default async function AgentPage({ params, searchParams }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+      <Breadcrumbs
+        items={[
+          { label: 'Home', href: '/' },
+          ...(agent.agency ? [{ label: agent.agency, href: `/agency/${slugifySegment(agent.agency)}` }] : []),
+          { label: agent.name },
+        ]}
       />
       <Link href="/leaderboard" className="inline-block text-sm text-zinc-400 transition hover:text-zinc-100">
         &larr; Back to Leaderboard

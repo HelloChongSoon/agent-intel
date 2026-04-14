@@ -1,6 +1,7 @@
 import { getAgentTransactionSummaries, searchAgents } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import SearchBar from '@/components/SearchBar';
 import SearchResultLink from '@/components/SearchResultLink';
 
@@ -62,6 +63,7 @@ export default async function SearchPage({ searchParams }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
       <div>
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Search' }]} />
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">Search Agents</h1>
         <p className="mt-2 text-lg text-zinc-400">Find profiles by name or CEA number.</p>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-500">

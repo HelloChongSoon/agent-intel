@@ -24,15 +24,15 @@ export default async function Home() {
     agencies,
     years,
     movements,
-    filterOptions,
   ] = await Promise.all([
     getRequestAbsoluteUrl('/'),
     getRequestSiteContext(),
     getAgencies(),
     getAvailableLeaderboardYears(),
     getMovements({ pageSize: 4 }),
-    getLeaderboardFilterOptions(),
   ]);
+  const coverageYear = years[0] || new Date().getFullYear();
+  const filterOptions = await getLeaderboardFilterOptions(coverageYear);
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -184,22 +184,28 @@ export default async function Home() {
           </div>
           <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
             <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Latest Coverage Year</div>
-            <div className="mt-3 text-3xl font-semibold text-zinc-100">{years[0] || new Date().getFullYear()}</div>
+            <div className="mt-3 text-3xl font-semibold text-zinc-100">{coverageYear}</div>
             <div className="mt-2 text-sm text-zinc-400">Use the year filter on leaderboard pages to compare historical standings.</div>
           </div>
           <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
             <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Property-Type Coverage</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {filterOptions.propertyTypes.slice(0, 5).map((value) => (
-                <Link
-                  key={value}
-                  href={`/property-type/${slugifySegment(value)}`}
-                  className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
-                >
-                  {formatLabel(value)}
-                </Link>
-              ))}
-            </div>
+            {filterOptions.propertyTypes.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {filterOptions.propertyTypes.slice(0, 5).map((value) => (
+                  <Link
+                    key={value}
+                    href={`/property-type/${slugifySegment(value)}`}
+                    className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
+                  >
+                    {formatLabel(value)}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 text-sm leading-7 text-zinc-400">
+                Property-type slices are still being prepared for {coverageYear}. Use the leaderboard for the broadest current coverage.
+              </div>
+            )}
           </div>
         </section>
       </div>
