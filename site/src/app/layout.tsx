@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl, getRequestSiteContext } from '@/lib/site';
+import RouteLoadingIndicator from '@/components/RouteLoadingIndicator';
 import "./globals.css";
 
 const geistSans = localFont({
@@ -58,6 +59,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <RouteLoadingIndicator />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
