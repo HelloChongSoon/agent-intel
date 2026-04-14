@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import { getAgentTransactionSummaries, searchAgents } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import SearchBar from '@/components/SearchBar';
+import SearchResultLink from '@/components/SearchResultLink';
 
 interface Props {
   searchParams: Promise<{ q?: string }>;
@@ -78,32 +78,57 @@ export default async function SearchPage({ searchParams }: Props) {
 
       {results.length > 0 && (
         <div className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-zinc-800">
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">CEA Number</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Agency</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Transactions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-900">
-              {results.map((agent) => (
-                <tr key={agent.cea_number} className="transition hover:bg-zinc-900/60">
-                  <td className="px-6 py-4">
-                    <Link href={`/agent/${agent.cea_number}`} className="text-sm font-medium text-zinc-100 transition hover:text-white">
-                      {agent.name}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-zinc-500">{agent.cea_number}</td>
-                  <td className="px-6 py-4 text-sm text-zinc-400">{agent.agency || '—'}</td>
-                  <td className="px-6 py-4 text-right text-sm font-medium text-zinc-100">
-                    {transactionSummaries[agent.cea_number]?.count ?? agent.total_transactions}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px]">
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Name</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">CEA Number</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Agency</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Transactions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900">
+                  {results.map((agent) => (
+                    <tr key={agent.cea_number} className="transition hover:bg-zinc-900/60">
+                      <td className="px-6 py-4">
+                        <SearchResultLink ceaNumber={agent.cea_number} name={agent.name} agency={agent.agency} query={query} />
+                      </td>
+                      <td className="px-6 py-4 text-sm text-zinc-500">{agent.cea_number}</td>
+                      <td className="px-6 py-4 text-sm text-zinc-400">{agent.agency || '—'}</td>
+                      <td className="px-6 py-4 text-right text-sm font-medium text-zinc-100">
+                        {transactionSummaries[agent.cea_number]?.count ?? agent.total_transactions}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="divide-y divide-zinc-900 md:hidden">
+            {results.map((agent) => (
+              <div key={agent.cea_number} className="space-y-4 px-5 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <SearchResultLink ceaNumber={agent.cea_number} name={agent.name} agency={agent.agency} query={query} />
+                    <div className="mt-1 text-xs text-zinc-500">{agent.cea_number}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">Transactions</div>
+                    <div className="mt-1 text-base font-semibold text-zinc-100">
+                      {transactionSummaries[agent.cea_number]?.count ?? agent.total_transactions}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">Agency</div>
+                  <div className="mt-1 text-sm text-zinc-300">{agent.agency || '—'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

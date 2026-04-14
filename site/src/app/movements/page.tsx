@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { getMovementInsights, getMovements } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
-import { formatLabel, slugifySegment } from '@/lib/format';
+import { formatDateLabel, formatLabel, slugifySegment } from '@/lib/format';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import Pagination from '@/components/Pagination';
+import MovementsSearchForm from '@/components/MovementsSearchForm';
+import MovementsTypeFilters from '@/components/MovementsTypeFilters';
 
 interface Props {
   searchParams: Promise<{ page?: string; type?: string; q?: string }>;
@@ -30,19 +32,6 @@ const TYPE_COLORS: Record<string, string> = {
   deregistration: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
   reregistration: 'border-violet-500/40 bg-violet-500/10 text-violet-300',
 };
-
-function formatDateLabel(value: string): string {
-  const parsed = new Date(`${value}T00:00:00`);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toLocaleDateString('en-SG', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
-
-  return value;
-}
 
 function formatCompactNumber(value: number): string {
   return value.toLocaleString('en-SG');
@@ -135,7 +124,7 @@ export default async function MovementsPage({ searchParams }: Props) {
             {type && <span> — filtered by {TYPE_LABELS[type] || type}</span>}
           </p>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-500">
-            Direct answer: movement records tell consumers when an agent changed agencies, entered the market, or reappeared in public records, which adds context to the agent profile rather than replacing it.
+            Movement records show when an agent changed agencies, entered the market, or reappeared in public records, adding useful context to the profile rather than replacing it.
           </p>
         </div>
       </div>
@@ -159,27 +148,11 @@ export default async function MovementsPage({ searchParams }: Props) {
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href={searchQuery ? `/movements?q=${encodeURIComponent(searchQuery)}` : '/movements'}
-          className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${!type ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
-        >
-          All
-        </Link>
-        {Object.entries(TYPE_LABELS).map(([key, label]) => (
-          <Link
-            key={key}
-            href={`/movements?${new URLSearchParams({ ...(searchQuery ? { q: searchQuery } : {}), type: key }).toString()}`}
-            className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${type === key ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
+      <MovementsTypeFilters selectedType={type} searchQuery={searchQuery} />
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
             <div>
               <h2 className="text-xl font-semibold text-zinc-100">Movements over time</h2>
               <p className="mt-1 text-sm text-zinc-500">Weekly breakdown of movement activity by type.</p>
@@ -239,25 +212,56 @@ export default async function MovementsPage({ searchParams }: Props) {
           <h2 className="text-xl font-semibold text-zinc-100">Top agencies by net change</h2>
           <p className="mt-1 text-sm text-zinc-500">Agencies gaining or losing the most people across public movement records.</p>
           <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-800">
-            <div className="grid grid-cols-[1.8fr_0.6fr_0.6fr_0.6fr] gap-3 border-b border-zinc-800 bg-zinc-900/50 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-              <div>Agency</div>
-              <div className="text-right">Gained</div>
-              <div className="text-right">Lost</div>
-              <div className="text-right">Net</div>
+            <div className="hidden md:block">
+              <div className="grid grid-cols-[1.8fr_0.6fr_0.6fr_0.6fr] gap-3 border-b border-zinc-800 bg-zinc-900/50 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                <div>Agency</div>
+                <div className="text-right">Gained</div>
+                <div className="text-right">Lost</div>
+                <div className="text-right">Net</div>
+              </div>
+              <div className="divide-y divide-zinc-900">
+                {insights.topAgencyNetChange.map((agency) => (
+                  <div key={agency.agency} className="grid grid-cols-[1.8fr_0.6fr_0.6fr_0.6fr] gap-3 px-4 py-3 text-sm">
+                    <Link
+                      href={`/agency/${slugifySegment(agency.agency)}`}
+                      className="font-medium text-zinc-100 transition hover:text-white"
+                    >
+                      {agency.agency}
+                    </Link>
+                    <div className="text-right text-emerald-300">+{formatCompactNumber(agency.gained)}</div>
+                    <div className="text-right text-rose-300">-{formatCompactNumber(agency.lost)}</div>
+                    <div className={`text-right font-medium ${agency.net >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      {agency.net >= 0 ? '+' : ''}{formatCompactNumber(agency.net)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="divide-y divide-zinc-900">
+
+            <div className="divide-y divide-zinc-900 md:hidden">
               {insights.topAgencyNetChange.map((agency) => (
-                <div key={agency.agency} className="grid grid-cols-[1.8fr_0.6fr_0.6fr_0.6fr] gap-3 px-4 py-3 text-sm">
+                <div key={agency.agency} className="space-y-4 px-4 py-4">
                   <Link
                     href={`/agency/${slugifySegment(agency.agency)}`}
-                    className="font-medium text-zinc-100 transition hover:text-white"
+                    className="block text-sm font-medium text-zinc-100 transition hover:text-white"
                   >
                     {agency.agency}
                   </Link>
-                  <div className="text-right text-emerald-300">+{formatCompactNumber(agency.gained)}</div>
-                  <div className="text-right text-rose-300">-{formatCompactNumber(agency.lost)}</div>
-                  <div className={`text-right font-medium ${agency.net >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                    {agency.net >= 0 ? '+' : ''}{formatCompactNumber(agency.net)}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-3 py-3 text-center">
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">Gained</div>
+                      <div className="mt-1 text-sm font-medium text-emerald-300">+{formatCompactNumber(agency.gained)}</div>
+                    </div>
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-3 py-3 text-center">
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">Lost</div>
+                      <div className="mt-1 text-sm font-medium text-rose-300">-{formatCompactNumber(agency.lost)}</div>
+                    </div>
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-3 py-3 text-center">
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">Net</div>
+                      <div className={`mt-1 text-sm font-medium ${agency.net >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                        {agency.net >= 0 ? '+' : ''}{formatCompactNumber(agency.net)}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -293,22 +297,7 @@ export default async function MovementsPage({ searchParams }: Props) {
               Showing {rows.length === 0 ? 0 : ((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, total)} of {formatCompactNumber(total)} movements
             </div>
           </div>
-          <form action="/movements" method="get" className="mt-5 flex flex-col gap-3 md:flex-row">
-            {type && <input type="hidden" name="type" value={type} />}
-            <input
-              type="search"
-              name="q"
-              defaultValue={searchQuery}
-              placeholder="Search by salesperson name or reg. no."
-              className="h-11 flex-1 rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-700"
-            />
-            <button
-              type="submit"
-              className="h-11 rounded-2xl border border-zinc-800 bg-zinc-100 px-5 text-sm font-medium text-zinc-950 transition hover:bg-white"
-            >
-              Search
-            </button>
-          </form>
+          <MovementsSearchForm defaultValue={searchQuery} movementType={type} />
         </div>
 
         <div className="hidden md:block">

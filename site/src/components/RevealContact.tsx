@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import posthog from 'posthog-js';
 
 interface RevealContactProps {
   kind: 'phone' | 'email';
@@ -28,7 +29,10 @@ export default function RevealContact({ kind, value }: RevealContactProps) {
   return (
     <button
       type="button"
-      onClick={() => setIsVisible(true)}
+      onClick={() => {
+        setIsVisible(true);
+        posthog.capture('agent_contact_revealed', { kind });
+      }}
       className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
       aria-label={buttonLabel}
     >

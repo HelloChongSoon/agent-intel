@@ -3,6 +3,8 @@
 import type { AgencyOption } from '@/lib/queries';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import posthog from 'posthog-js';
+import { startNavigationFeedback } from '@/components/RouteLoadingIndicator';
 
 interface LeaderboardFiltersProps {
   years: number[];
@@ -232,6 +234,7 @@ export default function LeaderboardFilters({
 
     const query = params.toString();
     startTransition(() => {
+      startNavigationFeedback();
       router.push(query ? `/leaderboard?${query}` : '/leaderboard');
     });
   }
@@ -241,7 +244,10 @@ export default function LeaderboardFilters({
       <FilterSelect
         label="Year"
         value={String(selectedYear)}
-        onChange={(value) => updateParams({ year: value })}
+        onChange={(value) => {
+          posthog.capture('leaderboard_filter_applied', { filter: 'year', value });
+          updateParams({ year: value });
+        }}
       >
         {years.map((year) => (
           <option key={year} value={year}>
@@ -253,13 +259,19 @@ export default function LeaderboardFilters({
       <AgencyCombobox
         agencies={agencies}
         selectedAgency={selectedAgency}
-        onChange={(value) => updateParams({ agency: value || undefined })}
+        onChange={(value) => {
+          posthog.capture('leaderboard_filter_applied', { filter: 'agency', value: value ?? null });
+          updateParams({ agency: value || undefined });
+        }}
       />
 
       <FilterSelect
         label="Property Type"
         value={selectedPropertyType || ''}
-        onChange={(value) => updateParams({ propertyType: value || undefined })}
+        onChange={(value) => {
+          posthog.capture('leaderboard_filter_applied', { filter: 'property_type', value: value || null });
+          updateParams({ propertyType: value || undefined });
+        }}
       >
         <option value="">All types</option>
         {propertyTypes.map((propertyType) => (
@@ -272,7 +284,10 @@ export default function LeaderboardFilters({
       <FilterSelect
         label="Transaction Type"
         value={selectedTransactionType || ''}
-        onChange={(value) => updateParams({ transactionType: value || undefined })}
+        onChange={(value) => {
+          posthog.capture('leaderboard_filter_applied', { filter: 'transaction_type', value: value || null });
+          updateParams({ transactionType: value || undefined });
+        }}
       >
         <option value="">All types</option>
         {transactionTypes.map((transactionType) => (

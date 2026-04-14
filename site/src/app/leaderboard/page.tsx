@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import LeaderboardFilters from '@/components/LeaderboardFilters';
 import LeaderboardPagination from '@/components/LeaderboardPagination';
+import LeaderboardAgentLink from '@/components/LeaderboardAgentLink';
 import {
   getAgencies,
   getAvailableLeaderboardYears,
@@ -123,7 +124,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             Top agents by transaction volume in Singapore
           </p>
           <p className="mt-4 text-sm leading-7 text-zinc-500">
-            Direct answer: use the main leaderboard for broad discovery, then switch to agency, property-type, or deal-type pages when you want a more relevant consumer comparison.
+            Start here for broad discovery, then switch to agency, property-type, or deal-type pages when you want a more relevant comparison.
           </p>
         </div>
 
@@ -214,9 +215,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                     </div>
                   </td>
                   <td className="px-6 py-4 md:px-8">
-                    <Link href={`/agent/${agent.cea_number}`} className="block text-base font-medium text-zinc-100 transition hover:text-white md:text-lg">
-                      {agent.name}
-                    </Link>
+                    <LeaderboardAgentLink ceaNumber={agent.cea_number} name={agent.name} agency={agent.agency} rank={agent.rank} />
                     <div className="mt-1 text-sm text-zinc-500">{agent.cea_number}</div>
                   </td>
                   <td className="px-6 py-4 text-base text-zinc-400">

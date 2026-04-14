@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { createPageMetadata } from '@/lib/seo';
 import { getVariantSiteUrl, getRequestAbsoluteUrl } from '@/lib/site';
+import OpenIntelLink from '@/components/OpenIntelLink';
 
 export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
@@ -48,12 +48,7 @@ export default async function ProductIntelPage() {
         </div>
       </section>
 
-      <Link
-        href={intelUrl}
-        className="inline-flex rounded-2xl bg-zinc-100 px-5 py-3 text-sm font-medium text-zinc-950 transition hover:bg-white"
-      >
-        Open PropNext Intel
-      </Link>
+      <OpenIntelLink href={intelUrl} />
     </div>
   );
 }
