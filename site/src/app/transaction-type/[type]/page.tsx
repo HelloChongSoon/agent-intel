@@ -47,7 +47,7 @@ export default async function TransactionTypePage({ params }: Props) {
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Deal Type</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Top {label} agents in Singapore</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
-          Direct answer: this page helps consumers compare agents based on the deal type they actually need, such as resale, rental, or new sale activity.
+          Use this page to compare agents based on the deal type you actually need, such as resale, rental, or new sale activity.
         </p>
       </div>
 

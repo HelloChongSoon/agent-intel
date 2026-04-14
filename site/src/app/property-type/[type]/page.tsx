@@ -47,7 +47,7 @@ export default async function PropertyTypePage({ params }: Props) {
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Property Type</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Top {label} agents in Singapore</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
-          Direct answer: this page shows agents with visible transaction activity in the {label.toLowerCase()} segment, helping consumers compare like-for-like specialists instead of relying on one broad leaderboard.
+          This page shows agents with visible transaction activity in the {label.toLowerCase()} segment, making it easier to compare like-for-like specialists instead of relying on one broad leaderboard.
         </p>
       </div>
 

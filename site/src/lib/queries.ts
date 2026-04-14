@@ -348,7 +348,9 @@ export interface MovementInsights {
 }
 
 function getWeekStart(value: string): string {
-  const date = new Date(`${value}T00:00:00`);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00Z`)
+    : new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
   const day = date.getUTCDay();
@@ -618,22 +620,41 @@ export async function getAgencyPropertyMix(agency: string): Promise<Array<{ prop
   const supabase = await getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('property_type, agents!inner(agency)')
-    .eq('agents.agency', agency)
+  const { data: agentRows, error: agentError } = await supabase
+    .from('agents')
+    .select('cea_number')
+    .eq('agency', agency)
     .limit(5000);
 
-  if (error) {
-    console.error('getAgencyPropertyMix failed:', error.message);
+  if (agentError) {
+    console.error('getAgencyPropertyMix agent lookup failed:', agentError.message);
     return [];
   }
 
+  const ceaNumbers = [...new Set(((agentRows || []) as Array<{ cea_number: string | null }>).map((row) => row.cea_number).filter(Boolean))] as string[];
+  if (ceaNumbers.length === 0) return [];
+
   const counts = new Map<string, number>();
-  for (const row of (data || []) as Array<{ property_type?: string | null }>) {
-    const propertyType = row.property_type;
-    if (!propertyType) continue;
-    counts.set(propertyType, (counts.get(propertyType) || 0) + 1);
+  const chunkSize = 200;
+
+  for (let i = 0; i < ceaNumbers.length; i += chunkSize) {
+    const chunk = ceaNumbers.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('property_type')
+      .in('cea_number', chunk)
+      .limit(50000);
+
+    if (error) {
+      console.error('getAgencyPropertyMix transaction lookup failed:', error.message);
+      continue;
+    }
+
+    for (const row of (data || []) as Array<{ property_type?: string | null }>) {
+      const propertyType = row.property_type;
+      if (!propertyType) continue;
+      counts.set(propertyType, (counts.get(propertyType) || 0) + 1);
+    }
   }
 
   return [...counts.entries()]

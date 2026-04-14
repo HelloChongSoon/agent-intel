@@ -110,7 +110,7 @@ export default async function Home() {
             Singapore property agent rankings, profiles, and movement intelligence for consumers who want to compare agents with clearer data.
           </p>
           <div className="mt-5 max-w-3xl text-sm text-zinc-500">
-            Direct answer: PropNext Intel helps consumers compare agent activity, specialization, and agency movement using public records and structured summaries that are easy to verify and quote.
+            Compare agent activity, specialization, and agency movement using public records and structured summaries that are easier to verify and use in a real decision.
           </div>
           <div className="mt-8">
             <SearchBar />

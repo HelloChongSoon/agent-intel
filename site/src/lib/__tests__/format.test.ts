@@ -19,6 +19,8 @@ describe('format helpers', () => {
   it('formats ISO and bucket-style dates', () => {
     expect(formatDateLabel('2026-04-13')).toBe('13 Apr 2026');
     expect(formatDateLabel('MAR-2026')).toBe('Mar 2026');
+    expect(formatDateLabel('2026-04')).toBe('Apr 2026');
+    expect(formatDateLabel('2026-04-13T03:20:37.589177+00:00')).toBe('13 Apr 2026');
   });
 
   it('formats numbers in Singapore-friendly grouped form', () => {

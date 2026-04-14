@@ -57,7 +57,7 @@ export default async function GuidePage({ params }: Props) {
       </div>
 
       <section className="rounded-[28px] border border-zinc-800 bg-zinc-950/90 p-7">
-        <h2 className="text-xl font-semibold text-zinc-100">Direct answer</h2>
+        <h2 className="text-xl font-semibold text-zinc-100">In short</h2>
         <p className="mt-4 text-base leading-8 text-zinc-300">{guide.directAnswer}</p>
       </section>
 

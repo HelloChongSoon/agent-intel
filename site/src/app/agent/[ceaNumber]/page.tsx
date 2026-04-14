@@ -87,8 +87,25 @@ function formatCount(value: number): string {
 function formatDateLabel(value: string | null | undefined): string {
   if (!value) return '—';
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const parsed = new Date(`${value}T00:00:00`);
+  const monthYearMatch = value.match(/^([A-Z]{3})-(\d{4})$/i);
+  if (monthYearMatch) {
+    const [, month, year] = monthYearMatch;
+    return `${month.charAt(0).toUpperCase()}${month.slice(1).toLowerCase()} ${year}`;
+  }
+
+  const isoMonthMatch = value.match(/^(\d{4})-(\d{2})$/);
+  if (isoMonthMatch) {
+    const parsed = new Date(`${value}-01T00:00:00Z`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString('en-SG', {
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}(?:[T\s].*)?$/.test(value)) {
+    const parsed = new Date(value);
     if (!Number.isNaN(parsed.getTime())) {
       return parsed.toLocaleDateString('en-SG', {
         day: 'numeric',
@@ -98,10 +115,13 @@ function formatDateLabel(value: string | null | undefined): string {
     }
   }
 
-  const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
-  if (periodMatch) {
-    const [, month, year] = periodMatch;
-    return `${month.charAt(0)}${month.slice(1).toLowerCase()} ${year}`;
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString('en-SG', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   return value;
