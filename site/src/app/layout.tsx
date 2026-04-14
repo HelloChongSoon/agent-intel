@@ -5,6 +5,7 @@ import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl, getRequestSiteContext } from '@/lib/site';
 import RouteLoadingIndicator from '@/components/RouteLoadingIndicator';
 import WebVitals from '@/components/WebVitals';
+import PostHogProvider from '@/components/PostHogProvider';
 import "./globals.css";
 
 const geistSans = localFont({
@@ -60,6 +61,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <PostHogProvider />
         <RouteLoadingIndicator />
         <WebVitals />
         <script
