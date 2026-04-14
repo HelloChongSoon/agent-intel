@@ -26,9 +26,9 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
   const agent = await getAgent(ceaNumber);
 
   return createPageMetadata({
-    title: agent ? `${agent.name} (${ceaNumber})` : `Agent ${ceaNumber}`,
+    title: agent ? `${agent.name} — Property Agent Profile (${ceaNumber})` : `Agent ${ceaNumber}`,
     description: agent
-      ? `View ${agent.name} on PropNext Intel with registration context, recent activity, property mix, and transaction history.`
+      ? `${agent.name} (${ceaNumber})${agent.agency ? ` at ${agent.agency}` : ''} — view transaction history, property mix, rankings, and registration details on PropNext Intel.`
       : 'Agent profile page',
     path: `/agent/${ceaNumber}`,
     noindex: !agent,

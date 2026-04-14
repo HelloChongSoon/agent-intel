@@ -20,8 +20,8 @@ interface Props {
 
 export async function generateMetadata() {
   return createPageMetadata({
-    title: 'Agent Leaderboard',
-    description: 'Top property agents in Singapore by transaction volume, with agency, property-type, and deal-type filters.',
+    title: 'Top Property Agent Leaderboard Singapore 2026',
+    description: 'Ranked list of Singapore property agents by transaction volume. Filter by agency, property type, and deal type with yearly comparisons.',
     path: '/leaderboard',
   });
 }

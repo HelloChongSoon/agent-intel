@@ -6,8 +6,8 @@ import { getRequestAbsoluteUrl } from '@/lib/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
-    title: 'About PropNext',
-    description: 'Learn what PropNext is building, why PropNext Intel exists, and how the brand fits into the wider property intelligence roadmap.',
+    title: 'About PropNext — Singapore Property Intelligence',
+    description: 'Learn what PropNext is building, why PropNext Intel exists, and how it fits into the wider Singapore property intelligence roadmap.',
     path: '/about',
   });
 }

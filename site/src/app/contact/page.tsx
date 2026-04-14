@@ -5,8 +5,8 @@ import { getRequestAbsoluteUrl } from '@/lib/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
-    title: 'Contact PropNext',
-    description: 'Contact PropNext about product feedback, data corrections, partnerships, or support related to PropNext Intel.',
+    title: 'Contact PropNext — Feedback, Partnerships & Support',
+    description: 'Get in touch with PropNext for product feedback, data corrections, partnership enquiries, or support related to PropNext Intel.',
     path: '/contact',
   });
 }

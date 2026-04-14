@@ -18,9 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const agency = await getAgencyBySlug(slug);
 
   return createPageMetadata({
-    title: agency ? `${agency.name} leaderboard` : 'Agency leaderboard',
+    title: agency ? `${agency.name} Agent Leaderboard — Full Rankings` : 'Agency leaderboard',
     description: agency
-      ? `View the full ${agency.name} leaderboard on PropNext Intel.`
+      ? `Full ranked list of ${agency.name} property agents by transaction volume on PropNext Intel.`
       : 'Agency leaderboard',
     path: `/agency/${slug}/leaderboard`,
     noindex: !agency,

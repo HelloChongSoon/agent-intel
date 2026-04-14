@@ -9,10 +9,12 @@ export async function generateMetadata() {
   const context = await getRequestSiteContext();
 
   return createPageMetadata({
-    title: context.isIntel ? 'PropNext Intel' : 'PropNext',
+    title: context.isIntel
+      ? 'Singapore Property Agent Rankings & Intelligence'
+      : 'PropNext — Singapore Property Intelligence Platform',
     description: context.isIntel
-      ? 'Singapore property agent rankings, profiles, and movement intelligence.'
-      : 'PropNext is building Singapore property intelligence products for Singapore consumers and market watchers.',
+      ? 'Compare Singapore property agents by transaction volume, track agency movements, and explore agent profiles powered by official CEA data.'
+      : 'PropNext builds property intelligence tools for Singapore consumers, starting with agent rankings, movement tracking, and profile data.',
     path: '/',
   });
 }

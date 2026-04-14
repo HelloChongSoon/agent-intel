@@ -6,8 +6,8 @@ import { getRequestAbsoluteUrl } from '@/lib/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
-    title: 'Methodology',
-    description: 'Understand how PropNext Intel calculates rankings, summarizes agent activity, and presents movement intelligence for Singapore consumers.',
+    title: 'Ranking Methodology — How Agent Rankings Are Calculated',
+    description: 'How PropNext Intel calculates property agent rankings, tracks agency movements, and presents transaction data from official CEA sources.',
     path: '/methodology',
   });
 }

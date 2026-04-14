@@ -5,8 +5,8 @@ import { getRequestAbsoluteUrl } from '@/lib/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
-    title: 'Data Sources',
-    description: 'See what data on PropNext Intel comes from public records, data.gov, and structured scraping, including refresh cadence and limitations.',
+    title: 'Data Sources — CEA Records, Data.gov.sg & More',
+    description: 'Where PropNext Intel data comes from: CEA public records, data.gov.sg transaction datasets, and structured scraping with daily refresh cadence.',
     path: '/data-sources',
   });
 }

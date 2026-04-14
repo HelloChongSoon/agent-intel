@@ -16,9 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const propertyType = await getPropertyTypeBySlug(type);
 
   return createPageMetadata({
-    title: propertyType ? `Top ${formatLabel(propertyType)} agents` : 'Property type',
+    title: propertyType ? `Top ${formatLabel(propertyType)} Property Agents in Singapore` : 'Property type',
     description: propertyType
-      ? `Compare the top ${formatLabel(propertyType).toLowerCase()} agents in Singapore with current transaction volume data and answer-first summaries.`
+      ? `Ranked list of Singapore's top ${formatLabel(propertyType).toLowerCase()} property agents by transaction volume with deal data and agent profiles.`
       : 'Property-type summary page',
     path: `/property-type/${type}`,
     noindex: !propertyType,

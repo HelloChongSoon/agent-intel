@@ -14,8 +14,8 @@ interface Props {
 
 export async function generateMetadata() {
   return createPageMetadata({
-    title: 'Agent Movements',
-    description: 'Track property agent movements in Singapore, including agency transfers, registrations, history trends, and searchable activity.',
+    title: 'Property Agent Movements & Agency Transfers Singapore',
+    description: 'Track Singapore property agent agency transfers, new registrations, and deregistrations with weekly trends and searchable history.',
     path: '/movements',
   });
 }

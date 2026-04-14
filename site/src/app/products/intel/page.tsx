@@ -6,8 +6,8 @@ import OpenIntelLink from '@/components/OpenIntelLink';
 
 export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
-    title: 'PropNext Intel',
-    description: 'PropNext Intel is the main indexed product for agent rankings, profile pages, movement intelligence, and consumer-friendly property agent guides.',
+    title: 'PropNext Intel — Agent Rankings & Movement Tracker',
+    description: 'PropNext Intel provides Singapore property agent rankings, detailed profiles, movement tracking, and consumer guides powered by official data.',
     path: '/products/intel',
   });
 }

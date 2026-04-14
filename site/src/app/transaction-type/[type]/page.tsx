@@ -16,9 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const transactionType = await getTransactionTypeBySlug(type);
 
   return createPageMetadata({
-    title: transactionType ? `Top ${formatLabel(transactionType)} agents` : 'Transaction type',
+    title: transactionType ? `Top ${formatLabel(transactionType)} Agents in Singapore — Rankings` : 'Transaction type',
     description: transactionType
-      ? `Compare the top ${formatLabel(transactionType).toLowerCase()} agents in Singapore with current transaction volume data and practical summaries.`
+      ? `Ranked list of Singapore's top ${formatLabel(transactionType).toLowerCase()} property agents by volume with transaction data and agent profiles.`
       : 'Transaction-type summary page',
     path: `/transaction-type/${type}`,
     noindex: !transactionType,

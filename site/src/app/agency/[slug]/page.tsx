@@ -16,9 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const summary = await getAgencySummary(slug);
 
   return createPageMetadata({
-    title: summary ? `${summary.agency.name} agents` : 'Agency',
+    title: summary ? `${summary.agency.name} — Top Agents & Agency Overview` : 'Agency',
     description: summary
-      ? `Explore ${summary.agency.name} on PropNext Intel: top agents, recent movements, and property mix context.`
+      ? `${summary.agency.name} overview: top-ranked agents, recent movement activity, property type mix, and performance data on PropNext Intel.`
       : 'Agency page',
     path: `/agency/${slug}`,
     noindex: !summary,

@@ -11,8 +11,8 @@ interface Props {
 
 export async function generateMetadata() {
   return createPageMetadata({
-    title: 'Search agents',
-    description: 'Search PropNext Intel for Singapore property agents by name or CEA number.',
+    title: 'Search Singapore Property Agents by Name or CEA Number',
+    description: 'Find any registered Singapore property agent by name or CEA registration number. View transaction history, agency details, and rankings.',
     path: '/search',
   });
 }
