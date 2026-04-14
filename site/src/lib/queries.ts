@@ -284,6 +284,43 @@ export async function getAgentTransactions(ceaNumber: string): Promise<Transacti
   );
 }
 
+export async function getAgentTransactionSummaries(
+  ceaNumbers: string[]
+): Promise<Record<string, { count: number; latest: string | null }>> {
+  const dedupedCeaNumbers = [...new Set(ceaNumbers.filter(Boolean))];
+  if (dedupedCeaNumbers.length === 0) return {};
+
+  const supabase = await getSupabase();
+  if (!supabase) return {};
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('cea_number, date')
+    .in('cea_number', dedupedCeaNumbers)
+    .limit(50000);
+
+  if (error) {
+    console.error('getAgentTransactionSummaries failed:', error.message);
+    return {};
+  }
+
+  const summaries = new Map<string, { count: number; latest: string | null }>();
+  for (const row of (data || []) as Array<{ cea_number: string; date: string }>) {
+    const existing = summaries.get(row.cea_number) || { count: 0, latest: null };
+    const latest =
+      !existing.latest || getTransactionDateSortKey(row.date) > getTransactionDateSortKey(existing.latest)
+        ? row.date
+        : existing.latest;
+
+    summaries.set(row.cea_number, {
+      count: existing.count + 1,
+      latest,
+    });
+  }
+
+  return Object.fromEntries(summaries.entries());
+}
+
 export interface MovementRow {
   id: number;
   cea_number: string;
@@ -374,14 +411,23 @@ export async function getMovementInsights(weeks: number = 10): Promise<MovementI
     };
   }
 
-  const { data, error } = await supabase
-    .from('movements')
-    .select('date, type, previous_agency, new_agency')
-    .order('date', { ascending: false })
-    .limit(20000);
+  const [countResult, dataResult] = await Promise.all([
+    supabase
+      .from('movements')
+      .select('id', { count: 'exact', head: true }),
+    supabase
+      .from('movements')
+      .select('date, type, previous_agency, new_agency')
+      .order('date', { ascending: false })
+      .limit(20000),
+  ]);
 
-  if (error) {
-    console.error('getMovementInsights failed:', error.message);
+  if (countResult.error) {
+    console.error('getMovementInsights count failed:', countResult.error.message);
+  }
+
+  if (dataResult.error) {
+    console.error('getMovementInsights failed:', dataResult.error.message);
     return {
       totalMovements: 0,
       countsByType: {},
@@ -390,6 +436,7 @@ export async function getMovementInsights(weeks: number = 10): Promise<MovementI
     };
   }
 
+  const data = dataResult.data || [];
   const countsByType = new Map<string, number>();
   const weeklyCounts = new Map<string, Map<string, number>>();
   const agencyTotals = new Map<string, { gained: number; lost: number }>();
@@ -441,7 +488,7 @@ export async function getMovementInsights(weeks: number = 10): Promise<MovementI
     .slice(0, 8);
 
   return {
-    totalMovements: (data || []).length,
+    totalMovements: countResult.count || data.length,
     countsByType: Object.fromEntries(countsByType.entries()),
     weeklyBreakdown,
     topAgencyNetChange,

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { searchAgents } from '@/lib/queries';
+import { getAgentTransactionSummaries, searchAgents } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import SearchBar from '@/components/SearchBar';
@@ -20,6 +20,9 @@ export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const query = params.q || '';
   const results = query ? await searchAgents(query, 50) : [];
+  const transactionSummaries = results.length
+    ? await getAgentTransactionSummaries(results.map((agent) => agent.cea_number))
+    : {};
   const homeUrl = await getRequestAbsoluteUrl('/');
   const searchUrl = await getRequestAbsoluteUrl('/search');
   const url = await getRequestAbsoluteUrl(`/search${query ? `?q=${encodeURIComponent(query)}` : ''}`);
@@ -94,7 +97,9 @@ export default async function SearchPage({ searchParams }: Props) {
                   </td>
                   <td className="px-6 py-4 text-sm text-zinc-500">{agent.cea_number}</td>
                   <td className="px-6 py-4 text-sm text-zinc-400">{agent.agency || '—'}</td>
-                  <td className="px-6 py-4 text-right text-sm font-medium text-zinc-100">{agent.total_transactions}</td>
+                  <td className="px-6 py-4 text-right text-sm font-medium text-zinc-100">
+                    {transactionSummaries[agent.cea_number]?.count ?? agent.total_transactions}
+                  </td>
                 </tr>
               ))}
             </tbody>

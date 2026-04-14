@@ -10,7 +10,14 @@ import { slugifySegment } from '@/lib/format';
 
 interface Props {
   params: Promise<{ ceaNumber: string }>;
-  searchParams: Promise<{ txPage?: string; propertyType?: string; transactionType?: string; role?: string }>;
+  searchParams: Promise<{
+    txPage?: string;
+    propertyType?: string;
+    transactionType?: string;
+    role?: string;
+    txYear?: string;
+    txMonth?: string;
+  }>;
 }
 
 export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
@@ -121,11 +128,54 @@ function getTransactionSortKey(value: string): number {
   return Number.isNaN(parsed) ? -1 : parsed;
 }
 
+function parseTransactionPeriod(value: string): { year: number | null; monthIndex: number | null } {
+  const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
+  if (periodMatch) {
+    return {
+      year: Number(periodMatch[2]),
+      monthIndex: MONTH_INDEX[periodMatch[1]] ?? null,
+    };
+  }
+
+  const dateMatch = value.match(/^(\d{4})-(\d{2})-\d{2}$/);
+  if (dateMatch) {
+    return {
+      year: Number(dateMatch[1]),
+      monthIndex: Number(dateMatch[2]) - 1,
+    };
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return {
+      year: parsed.getFullYear(),
+      monthIndex: parsed.getMonth(),
+    };
+  }
+
+  return { year: null, monthIndex: null };
+}
+
 function formatMonthBucket(value: string): string {
   const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
   if (!periodMatch) return value;
   return `${periodMatch[1].charAt(0)}${periodMatch[1].slice(1).toLowerCase()} ${periodMatch[2]}`;
 }
+
+const MONTH_OPTIONS = [
+  { value: '0', label: 'Jan' },
+  { value: '1', label: 'Feb' },
+  { value: '2', label: 'Mar' },
+  { value: '3', label: 'Apr' },
+  { value: '4', label: 'May' },
+  { value: '5', label: 'Jun' },
+  { value: '6', label: 'Jul' },
+  { value: '7', label: 'Aug' },
+  { value: '8', label: 'Sep' },
+  { value: '9', label: 'Oct' },
+  { value: '10', label: 'Nov' },
+  { value: '11', label: 'Dec' },
+];
 
 function getMovementColumns(movement: MovementRow): {
   from: { label: string; agencySlug?: string };
@@ -168,12 +218,35 @@ function getMovementColumns(movement: MovementRow): {
   };
 }
 
+function buildAgentTransactionFilterHref(
+  ceaNumber: string,
+  filters: {
+    propertyType?: string;
+    transactionType?: string;
+    role?: string;
+    txYear?: string;
+    txMonth?: string;
+  }
+): string {
+  const params = new URLSearchParams();
+  if (filters.propertyType) params.set('propertyType', filters.propertyType);
+  if (filters.transactionType) params.set('transactionType', filters.transactionType);
+  if (filters.role) params.set('role', filters.role);
+  if (filters.txYear) params.set('txYear', filters.txYear);
+  if (filters.txMonth) params.set('txMonth', filters.txMonth);
+
+  const query = params.toString();
+  return `/agent/${ceaNumber}${query ? `?${query}` : ''}`;
+}
+
 export default async function AgentPage({ params, searchParams }: Props) {
   const { ceaNumber } = await params;
   const resolvedSearchParams = await searchParams;
   const selectedPropertyType = resolvedSearchParams.propertyType || '';
   const selectedTransactionType = resolvedSearchParams.transactionType || '';
   const selectedRole = resolvedSearchParams.role || '';
+  const selectedYear = resolvedSearchParams.txYear || '';
+  const selectedMonth = resolvedSearchParams.txMonth || '';
   const pageSize = 25;
   const agent = await getAgent(ceaNumber);
   if (!agent) notFound();
@@ -187,7 +260,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
     }),
     getAgentMovements(ceaNumber, 8),
   ]);
-  const totalTransactions = Math.max(agent.total_transactions || 0, transactions.length);
+  const totalTransactions = transactions.length > 0 ? transactions.length : Math.max(agent.total_transactions || 0, 0);
 
   // Group transaction stats
   const propertyTypes = new Map<string, number>();
@@ -201,10 +274,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
     monthlyActivity.set(tx.date, (monthlyActivity.get(tx.date) || 0) + 1);
   }
 
-  const latestTransaction = transactions.reduce<string | null>((latest, tx) => {
-    if (!latest) return tx.date;
-    return getTransactionSortKey(tx.date) > getTransactionSortKey(latest) ? tx.date : latest;
-  }, null);
+  const latestTransaction = transactions[0]?.date || null;
 
   const topPropertyTypes = [...propertyTypes.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -238,11 +308,27 @@ export default async function AgentPage({ params, searchParams }: Props) {
     propertyTypes: [...propertyTypes.keys()].sort(),
     transactionTypes: [...transactionTypes.keys()].sort(),
     roles: [...roles.keys()].sort(),
+    years: [...new Set(
+      transactions
+        .map((tx) => parseTransactionPeriod(tx.date).year)
+        .filter((year): year is number => year !== null)
+    )].sort((a, b) => b - a),
   };
+  const monthOptions = MONTH_OPTIONS.filter((option) => {
+    const monthIndex = Number(option.value);
+    return transactions.some((tx) => {
+      const period = parseTransactionPeriod(tx.date);
+      if (selectedYear && String(period.year) !== selectedYear) return false;
+      return period.monthIndex === monthIndex;
+    });
+  });
   const filteredTransactions = transactions.filter((tx) => {
+    const period = parseTransactionPeriod(tx.date);
     if (selectedPropertyType && tx.property_type !== selectedPropertyType) return false;
     if (selectedTransactionType && tx.transaction_type !== selectedTransactionType) return false;
     if (selectedRole && tx.role !== selectedRole) return false;
+    if (selectedYear && String(period.year) !== selectedYear) return false;
+    if (selectedMonth && String(period.monthIndex) !== selectedMonth) return false;
     return true;
   });
   const currentPage = Math.max(1, Number.parseInt(resolvedSearchParams.txPage || '1', 10) || 1);
@@ -255,6 +341,8 @@ export default async function AgentPage({ params, searchParams }: Props) {
   if (selectedPropertyType) txSearchParams.propertyType = selectedPropertyType;
   if (selectedTransactionType) txSearchParams.transactionType = selectedTransactionType;
   if (selectedRole) txSearchParams.role = selectedRole;
+  if (selectedYear) txSearchParams.txYear = selectedYear;
+  if (selectedMonth) txSearchParams.txMonth = selectedMonth;
 
   const homeUrl = await getRequestAbsoluteUrl('/');
   const leaderboardUrl = await getRequestAbsoluteUrl('/leaderboard');
@@ -291,7 +379,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
       </Link>
 
       <section className="rounded-[28px] border border-zinc-800 bg-zinc-950/90 p-6">
-        <h2 className="text-xl font-semibold text-zinc-100">Direct answer</h2>
+        <h2 className="text-xl font-semibold text-zinc-100">Profile summary</h2>
         <p className="mt-3 text-sm leading-7 text-zinc-400">
           {agent.name} is listed on PropNext Intel with public registration context, visible transaction history, and market-position signals that help consumers judge recency, specialization, and fit.
         </p>
@@ -627,25 +715,32 @@ export default async function AgentPage({ params, searchParams }: Props) {
               Page <span className="font-medium text-zinc-100">{safeCurrentPage}</span> of <span className="font-medium text-zinc-100">{totalPages}</span>
             </div>
           </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="mt-5 grid gap-3 md:grid-cols-5">
             <div>
               <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Property</div>
               <div className="flex flex-wrap gap-2">
                 <Link
-                  href={`/agent/${ceaNumber}${selectedTransactionType || selectedRole ? `?${new URLSearchParams({ ...(selectedTransactionType ? { transactionType: selectedTransactionType } : {}), ...(selectedRole ? { role: selectedRole } : {}) }).toString()}` : ''}`}
+                  href={buildAgentTransactionFilterHref(ceaNumber, {
+                    transactionType: selectedTransactionType || undefined,
+                    role: selectedRole || undefined,
+                    txYear: selectedYear || undefined,
+                    txMonth: selectedMonth || undefined,
+                  })}
                   className={`rounded-full border px-3 py-1 text-xs transition ${!selectedPropertyType ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
                 >
                   All
                 </Link>
                 {filters.propertyTypes.slice(0, 6).map((value) => {
-                  const params = new URLSearchParams();
-                  params.set('propertyType', value);
-                  if (selectedTransactionType) params.set('transactionType', selectedTransactionType);
-                  if (selectedRole) params.set('role', selectedRole);
                   return (
                     <Link
                       key={value}
-                      href={`/agent/${ceaNumber}?${params.toString()}`}
+                      href={buildAgentTransactionFilterHref(ceaNumber, {
+                        propertyType: value,
+                        transactionType: selectedTransactionType || undefined,
+                        role: selectedRole || undefined,
+                        txYear: selectedYear || undefined,
+                        txMonth: selectedMonth || undefined,
+                      })}
                       className={`rounded-full border px-3 py-1 text-xs transition ${selectedPropertyType === value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
                     >
                       {formatLabel(value)}
@@ -658,20 +753,27 @@ export default async function AgentPage({ params, searchParams }: Props) {
               <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Deal Type</div>
               <div className="flex flex-wrap gap-2">
                 <Link
-                  href={`/agent/${ceaNumber}${selectedPropertyType || selectedRole ? `?${new URLSearchParams({ ...(selectedPropertyType ? { propertyType: selectedPropertyType } : {}), ...(selectedRole ? { role: selectedRole } : {}) }).toString()}` : ''}`}
+                  href={buildAgentTransactionFilterHref(ceaNumber, {
+                    propertyType: selectedPropertyType || undefined,
+                    role: selectedRole || undefined,
+                    txYear: selectedYear || undefined,
+                    txMonth: selectedMonth || undefined,
+                  })}
                   className={`rounded-full border px-3 py-1 text-xs transition ${!selectedTransactionType ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
                 >
                   All
                 </Link>
                 {filters.transactionTypes.slice(0, 6).map((value) => {
-                  const params = new URLSearchParams();
-                  if (selectedPropertyType) params.set('propertyType', selectedPropertyType);
-                  params.set('transactionType', value);
-                  if (selectedRole) params.set('role', selectedRole);
                   return (
                     <Link
                       key={value}
-                      href={`/agent/${ceaNumber}?${params.toString()}`}
+                      href={buildAgentTransactionFilterHref(ceaNumber, {
+                        propertyType: selectedPropertyType || undefined,
+                        transactionType: value,
+                        role: selectedRole || undefined,
+                        txYear: selectedYear || undefined,
+                        txMonth: selectedMonth || undefined,
+                      })}
                       className={`rounded-full border px-3 py-1 text-xs transition ${selectedTransactionType === value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
                     >
                       {formatLabel(value)}
@@ -684,26 +786,94 @@ export default async function AgentPage({ params, searchParams }: Props) {
               <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Role</div>
               <div className="flex flex-wrap gap-2">
                 <Link
-                  href={`/agent/${ceaNumber}${selectedPropertyType || selectedTransactionType ? `?${new URLSearchParams({ ...(selectedPropertyType ? { propertyType: selectedPropertyType } : {}), ...(selectedTransactionType ? { transactionType: selectedTransactionType } : {}) }).toString()}` : ''}`}
+                  href={buildAgentTransactionFilterHref(ceaNumber, {
+                    propertyType: selectedPropertyType || undefined,
+                    transactionType: selectedTransactionType || undefined,
+                    txYear: selectedYear || undefined,
+                    txMonth: selectedMonth || undefined,
+                  })}
                   className={`rounded-full border px-3 py-1 text-xs transition ${!selectedRole ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
                 >
                   All
                 </Link>
                 {filters.roles.slice(0, 6).map((value) => {
-                  const params = new URLSearchParams();
-                  if (selectedPropertyType) params.set('propertyType', selectedPropertyType);
-                  if (selectedTransactionType) params.set('transactionType', selectedTransactionType);
-                  params.set('role', value);
                   return (
                     <Link
                       key={value}
-                      href={`/agent/${ceaNumber}?${params.toString()}`}
+                      href={buildAgentTransactionFilterHref(ceaNumber, {
+                        propertyType: selectedPropertyType || undefined,
+                        transactionType: selectedTransactionType || undefined,
+                        role: value,
+                        txYear: selectedYear || undefined,
+                        txMonth: selectedMonth || undefined,
+                      })}
                       className={`rounded-full border px-3 py-1 text-xs transition ${selectedRole === value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
                     >
                       {formatLabel(value)}
                     </Link>
                   );
                 })}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Year</div>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={buildAgentTransactionFilterHref(ceaNumber, {
+                    propertyType: selectedPropertyType || undefined,
+                    transactionType: selectedTransactionType || undefined,
+                    role: selectedRole || undefined,
+                    txMonth: selectedMonth || undefined,
+                  })}
+                  className={`rounded-full border px-3 py-1 text-xs transition ${!selectedYear ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
+                >
+                  All
+                </Link>
+                {filters.years.slice(0, 6).map((value) => (
+                  <Link
+                    key={value}
+                    href={buildAgentTransactionFilterHref(ceaNumber, {
+                      propertyType: selectedPropertyType || undefined,
+                      transactionType: selectedTransactionType || undefined,
+                      role: selectedRole || undefined,
+                      txYear: String(value),
+                    })}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${selectedYear === String(value) ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
+                  >
+                    {value}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Month</div>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={buildAgentTransactionFilterHref(ceaNumber, {
+                    propertyType: selectedPropertyType || undefined,
+                    transactionType: selectedTransactionType || undefined,
+                    role: selectedRole || undefined,
+                    txYear: selectedYear || undefined,
+                  })}
+                  className={`rounded-full border px-3 py-1 text-xs transition ${!selectedMonth ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
+                >
+                  All
+                </Link>
+                {monthOptions.map((option) => (
+                  <Link
+                    key={option.value}
+                    href={buildAgentTransactionFilterHref(ceaNumber, {
+                      propertyType: selectedPropertyType || undefined,
+                      transactionType: selectedTransactionType || undefined,
+                      role: selectedRole || undefined,
+                      txYear: selectedYear || undefined,
+                      txMonth: option.value,
+                    })}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${selectedMonth === option.value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
+                  >
+                    {option.label}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
