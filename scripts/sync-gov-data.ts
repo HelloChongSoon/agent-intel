@@ -238,14 +238,21 @@ async function syncTransactions() {
       .filter((value): value is string => Boolean(value))
       .join(', ');
 
+    const dateVal = row.transaction_date || '';
+    let year: number | null = null;
+    const mmYyyy = dateVal.match(/^[A-Z]{3}-(\d{4})$/);
+    if (mmYyyy) year = parseInt(mmYyyy[1], 10);
+    else if (/^\d{4}-/.test(dateVal)) year = parseInt(dateVal.slice(0, 4), 10);
+
     batch.push({
       cea_number: ceaNumber,
-      date: row.transaction_date || '',
+      date: dateVal,
+      year,
       property_type: row.property_type || null,
       transaction_type: row.transaction_type || null,
       role: row.represented || null,
       location: location || null,
-      hash: txHash(ceaNumber, row.transaction_date || '', row.property_type || '', row.transaction_type || '', row.represented || '', location || ''),
+      hash: txHash(ceaNumber, dateVal, row.property_type || '', row.transaction_type || '', row.represented || '', location || ''),
     });
 
     if (batch.length >= BATCH_SIZE) {
