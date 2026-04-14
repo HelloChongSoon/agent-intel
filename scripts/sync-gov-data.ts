@@ -244,6 +244,9 @@ async function syncTransactions() {
     if (mmYyyy) year = parseInt(mmYyyy[1], 10);
     else if (/^\d{4}-/.test(dateVal)) year = parseInt(dateVal.slice(0, 4), 10);
 
+    // Extract area from general_location (the part after district code in the location string)
+    const area = normalizeLocationPart(row.general_location);
+
     batch.push({
       cea_number: ceaNumber,
       date: dateVal,
@@ -252,6 +255,7 @@ async function syncTransactions() {
       transaction_type: row.transaction_type || null,
       role: row.represented || null,
       location: location || null,
+      area: area || null,
       hash: txHash(ceaNumber, dateVal, row.property_type || '', row.transaction_type || '', row.represented || '', location || ''),
     });
 

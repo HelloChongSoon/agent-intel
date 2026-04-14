@@ -15,6 +15,8 @@ export async function GET(request: Request) {
         `${siteUrl}/sitemap-taxonomies.xml`,
         `${siteUrl}/sitemap-agencies.xml`,
         `${siteUrl}/sitemap-agents.xml`,
+        `${siteUrl}/sitemap-areas.xml`,
+        `${siteUrl}/sitemap-area-types.xml`,
       ];
 
   return xmlResponse(buildSitemapIndex(sitemapUrls));

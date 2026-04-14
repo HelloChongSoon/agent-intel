@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getAgent, getAgentMovements, getAgentTransactions, getComparableAgents, type MovementRow } from '@/lib/queries';
+import { getAgent, getAgentMovements, getAgentTransactions, getSimilarVolumeAgents, getSameAreaAgents, getSamePropertyTypeAgents, type MovementRow } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -272,13 +272,8 @@ export default async function AgentPage({ params, searchParams }: Props) {
   const agent = await getAgent(ceaNumber);
   if (!agent) notFound();
 
-  const [transactions, comparableAgents, agentMovements] = await Promise.all([
+  const [transactions, agentMovements] = await Promise.all([
     getAgentTransactions(ceaNumber),
-    getComparableAgents({
-      ceaNumber,
-      agency: agent.agency,
-      limit: 5,
-    }),
     getAgentMovements(ceaNumber, 8),
   ]);
   const totalTransactions = transactions.length > 0 ? transactions.length : Math.max(agent.total_transactions || 0, 0);
@@ -325,6 +320,16 @@ export default async function AgentPage({ params, searchParams }: Props) {
       .map((tx) => splitLocation(tx.location).area)
       .filter((area) => area !== '—')
   ).size;
+
+  // Fetch comparable agents based on computed data
+  const topArea = topRecentAreas.length > 0 ? topRecentAreas[0][0] : null;
+  const topPropertyType = topPropertyTypes.length > 0 ? topPropertyTypes[0][0] : null;
+  const [similarVolumeAgents, sameAreaAgents, samePropertyTypeAgents] = await Promise.all([
+    getSimilarVolumeAgents({ ceaNumber, totalTransactions, limit: 4 }),
+    topArea ? getSameAreaAgents({ ceaNumber, area: topArea, limit: 4 }) : Promise.resolve([]),
+    topPropertyType ? getSamePropertyTypeAgents({ ceaNumber, propertyType: topPropertyType, limit: 4 }) : Promise.resolve([]),
+  ]);
+
   const filters = {
     propertyTypes: [...propertyTypes.keys()].sort(),
     transactionTypes: [...transactionTypes.keys()].sort(),
@@ -1020,29 +1025,95 @@ export default async function AgentPage({ params, searchParams }: Props) {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <h2 className="text-xl font-semibold text-zinc-100">Comparable agents</h2>
-          <p className="mt-3 text-sm leading-7 text-zinc-400">
-            Similar profiles are shown to help consumers compare an agent within the same broader agency context.
-          </p>
-          <div className="mt-5 space-y-3">
-            {comparableAgents.length > 0 ? comparableAgents.map((comparable) => (
-              <Link
-                key={comparable.cea_number}
-                href={`/agent/${comparable.cea_number}`}
-                className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-zinc-700"
-              >
-                <div>
-                  <div className="text-sm font-medium text-zinc-100">{comparable.name}</div>
-                  <div className="mt-1 text-xs text-zinc-500">{comparable.cea_number}</div>
-                </div>
-                <div className="text-sm font-semibold text-zinc-100">{formatCount(comparable.total_transactions || 0)}</div>
-              </Link>
-            )) : (
-              <p className="text-sm text-zinc-500">No comparable profiles available yet.</p>
-            )}
-          </div>
-        </section>
+        {similarVolumeAgents.length > 0 && (
+          <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+            <h2 className="text-xl font-semibold text-zinc-100">Similar transaction volume</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-400">
+              Agents with a comparable number of recorded transactions across all property types.
+            </p>
+            <div className="mt-5 space-y-3">
+              {similarVolumeAgents.map((comparable) => (
+                <Link
+                  key={comparable.cea_number}
+                  href={`/agent/${comparable.cea_number}`}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-zinc-700"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-zinc-100">{comparable.name}</div>
+                    <div className="mt-1 text-xs text-zinc-500">{comparable.agency || 'Independent'}</div>
+                  </div>
+                  <div className="text-sm font-semibold text-zinc-100">{formatCount(comparable.total_transactions || 0)} txns</div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {sameAreaAgents.length > 0 && topArea && (
+          <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+            <h2 className="text-xl font-semibold text-zinc-100">Active in {topArea}</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-400">
+              Other agents frequently transacting in {topArea}.
+            </p>
+            <div className="mt-5 space-y-3">
+              {sameAreaAgents.map((comparable) => (
+                <Link
+                  key={comparable.cea_number}
+                  href={`/agent/${comparable.cea_number}`}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-zinc-700"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-zinc-100">{comparable.name}</div>
+                    <div className="mt-1 text-xs text-zinc-500">{comparable.agency || 'Independent'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-zinc-100">{formatCount(comparable.area_count)} in area</div>
+                    <div className="mt-1 text-xs text-zinc-500">{formatCount(comparable.total_transactions || 0)} total</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <Link
+              href={`/area/${slugifySegment(topArea)}`}
+              className="mt-4 inline-block text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
+            >
+              View all agents in {topArea} &rarr;
+            </Link>
+          </section>
+        )}
+
+        {samePropertyTypeAgents.length > 0 && topPropertyType && (
+          <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+            <h2 className="text-xl font-semibold text-zinc-100">{formatLabel(topPropertyType)} specialists</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-400">
+              Other agents who primarily deal in {formatLabel(topPropertyType).toLowerCase()} properties.
+            </p>
+            <div className="mt-5 space-y-3">
+              {samePropertyTypeAgents.map((comparable) => (
+                <Link
+                  key={comparable.cea_number}
+                  href={`/agent/${comparable.cea_number}`}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-zinc-700"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-zinc-100">{comparable.name}</div>
+                    <div className="mt-1 text-xs text-zinc-500">{comparable.agency || 'Independent'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-zinc-100">{formatCount(comparable.type_count)} {formatLabel(topPropertyType).toLowerCase()}</div>
+                    <div className="mt-1 text-xs text-zinc-500">{formatCount(comparable.total_transactions || 0)} total</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <Link
+              href={`/property-type/${slugifySegment(topPropertyType)}`}
+              className="mt-4 inline-block text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
+            >
+              View all {formatLabel(topPropertyType).toLowerCase()} agents &rarr;
+            </Link>
+          </section>
+        )}
       </div>
     </div>
   );

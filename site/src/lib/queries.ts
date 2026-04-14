@@ -725,6 +725,209 @@ export async function getComparableAgents(params: {
   return (data || []) as AgentRow[];
 }
 
+export async function getSimilarVolumeAgents(params: {
+  ceaNumber: string;
+  totalTransactions: number;
+  limit?: number;
+}): Promise<AgentRow[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const spread = Math.max(params.totalTransactions * 0.3, 5);
+  const lowerBound = Math.max(0, Math.floor(params.totalTransactions - spread));
+  const upperBound = Math.ceil(params.totalTransactions + spread);
+
+  const { data, error } = await supabase
+    .from('agents')
+    .select('*')
+    .neq('cea_number', params.ceaNumber)
+    .gte('total_transactions', lowerBound)
+    .lte('total_transactions', upperBound)
+    .order('total_transactions', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('getSimilarVolumeAgents failed:', error.message);
+    return [];
+  }
+
+  const target = params.totalTransactions;
+  return ((data || []) as AgentRow[])
+    .sort((a, b) => Math.abs((a.total_transactions || 0) - target) - Math.abs((b.total_transactions || 0) - target))
+    .slice(0, params.limit || 4);
+}
+
+export interface AreaAgentRow extends AgentRow {
+  area_count: number;
+}
+
+export async function getSameAreaAgents(params: {
+  ceaNumber: string;
+  area: string;
+  limit?: number;
+}): Promise<AreaAgentRow[]> {
+  const supabase = await getSupabase();
+  if (!supabase || !params.area) return [];
+
+  const { data, error } = await supabase.rpc('get_agents_by_area', {
+    area_filter: params.area,
+    exclude_cea: params.ceaNumber,
+    result_limit: params.limit || 4,
+  });
+
+  if (error) {
+    console.error('getSameAreaAgents failed:', error.message);
+    return [];
+  }
+
+  return ((data || []) as Array<Record<string, unknown>>).map((row) => ({
+    cea_number: String(row.cea_number || ''),
+    name: String(row.name || ''),
+    agency: row.agency ? String(row.agency) : null,
+    phone: null,
+    email: null,
+    registration_start: null,
+    registration_end: null,
+    total_transactions: Number(row.total_transactions || 0),
+    area_count: Number(row.area_count || 0),
+  }));
+}
+
+export interface PropertyTypeAgentRow extends AgentRow {
+  type_count: number;
+}
+
+export async function getSamePropertyTypeAgents(params: {
+  ceaNumber: string;
+  propertyType: string;
+  limit?: number;
+}): Promise<PropertyTypeAgentRow[]> {
+  const supabase = await getSupabase();
+  if (!supabase || !params.propertyType) return [];
+
+  const { data, error } = await supabase.rpc('get_agents_by_property_type', {
+    property_type_filter: params.propertyType,
+    exclude_cea: params.ceaNumber,
+    result_limit: params.limit || 4,
+  });
+
+  if (error) {
+    console.error('getSamePropertyTypeAgents failed:', error.message);
+    return [];
+  }
+
+  return ((data || []) as Array<Record<string, unknown>>).map((row) => ({
+    cea_number: String(row.cea_number || ''),
+    name: String(row.name || ''),
+    agency: row.agency ? String(row.agency) : null,
+    phone: null,
+    email: null,
+    registration_start: null,
+    registration_end: null,
+    total_transactions: Number(row.total_transactions || 0),
+    type_count: Number(row.type_count || 0),
+  }));
+}
+
+export interface AreaOption {
+  name: string;
+  count: number;
+}
+
+export async function getAreas(minAgents: number = 3): Promise<AreaOption[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.rpc('get_areas', { min_agents: minAgents });
+
+  if (error) {
+    console.error('getAreas failed:', error.message);
+    return [];
+  }
+
+  return ((data || []) as Array<Record<string, unknown>>)
+    .map((row) => ({
+      name: String(row.area || ''),
+      count: Number(row.agent_count || 0),
+    }))
+    .filter((a) => a.name.length > 0);
+}
+
+export async function getAreaBySlug(slug: string): Promise<string | null> {
+  const areas = await getAreas(1);
+  return areas.find((a) => slugifySegment(a.name) === slug)?.name || null;
+}
+
+export async function getAreaLeaderboard(params: {
+  area: string;
+  year?: number;
+  agency?: string;
+  propertyType?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<{ rows: LeaderboardRow[]; total: number }> {
+  const supabase = await getSupabase();
+  if (!supabase) return { rows: [], total: 0 };
+
+  const year = params.year || new Date().getFullYear();
+  const page = params.page || 1;
+  const pageSize = params.pageSize || 25;
+
+  const { data, error } = await supabase.rpc('get_area_leaderboard', {
+    area_filter: params.area,
+    year_filter: String(year),
+    agency_filter: params.agency || null,
+    property_type_filter: params.propertyType || null,
+    page_num: page,
+    page_size: pageSize,
+  });
+
+  if (error) {
+    console.error('getAreaLeaderboard failed:', error.message);
+    return { rows: [], total: 0 };
+  }
+
+  const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
+  const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+
+  return {
+    rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
+      rank,
+      name,
+      cea_number,
+      agency,
+      transactions,
+    })),
+    total,
+  };
+}
+
+export interface AreaPropertyTypeCombo {
+  area: string;
+  propertyType: string;
+  agentCount: number;
+}
+
+export async function getAreaPropertyTypeCombos(minAgents: number = 5): Promise<AreaPropertyTypeCombo[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.rpc('get_area_property_type_combos', { min_agents: minAgents });
+
+  if (error) {
+    console.error('getAreaPropertyTypeCombos failed:', error.message);
+    return [];
+  }
+
+  return ((data || []) as Array<Record<string, unknown>>)
+    .map((row) => ({
+      area: String(row.area || ''),
+      propertyType: String(row.property_type || ''),
+      agentCount: Number(row.agent_count || 0),
+    }))
+    .filter((c) => c.area.length > 0 && c.propertyType.length > 0);
+}
+
 export async function getPropertyTypeBySlug(slug: string): Promise<string | null> {
   const year = await getLatestLeaderboardYear();
   const { propertyTypes } = await getLeaderboardFilterOptions(year);
