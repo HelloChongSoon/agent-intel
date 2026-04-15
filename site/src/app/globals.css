@@ -114,6 +114,93 @@ html:not(.dark) .bg-violet-400 { background-color: #7c3aed; }
   100% { height: 100%; opacity: 1; }
 }
 
+/* ===================================================================
+   Root hero — premium animated background
+   =================================================================== */
+
+/* Grid pattern */
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 70%);
+}
+
+html:not(.dark) .hero-grid {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+}
+
+/* Floating orbs — slow drift animations */
+.hero-orb-1 {
+  animation: hero-drift-1 18s ease-in-out infinite;
+}
+
+.hero-orb-2 {
+  animation: hero-drift-2 22s ease-in-out infinite;
+}
+
+.hero-orb-3 {
+  animation: hero-drift-3 15s ease-in-out infinite;
+}
+
+@keyframes hero-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(8%, 12%) scale(1.05); }
+  66% { transform: translate(-5%, 6%) scale(0.97); }
+}
+
+@keyframes hero-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-10%, -8%) scale(1.08); }
+  70% { transform: translate(6%, -4%) scale(0.95); }
+}
+
+@keyframes hero-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  50% { transform: translate(12%, -10%) scale(1.12); opacity: 1; }
+}
+
+/* Pointer-tracking spotlight */
+.hero-spotlight {
+  background: radial-gradient(
+    600px circle at var(--spot-x) var(--spot-y),
+    rgba(96, 165, 250, 0.08),
+    transparent 50%
+  );
+  transition: background 0.3s ease;
+}
+
+html:not(.dark) .hero-spotlight {
+  background: radial-gradient(
+    600px circle at var(--spot-x) var(--spot-y),
+    rgba(37, 99, 235, 0.06),
+    transparent 50%
+  );
+}
+
+/* Film grain texture */
+.hero-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* Light mode orb adjustments — use darker tones */
+html:not(.dark) .hero-orb-1 {
+  background-color: rgba(37, 99, 235, 0.08);
+}
+
+html:not(.dark) .hero-orb-2 {
+  background-color: rgba(99, 102, 241, 0.06);
+}
+
+html:not(.dark) .hero-orb-3 {
+  background-color: rgba(14, 165, 233, 0.05);
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
