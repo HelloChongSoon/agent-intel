@@ -105,15 +105,6 @@ html:not(.dark) .bg-violet-400 { background-color: #7c3aed; }
   100% { transform: translateX(100%) scaleX(0.4); }
 }
 
-.page-loader-bar {
-  animation: page-loader-pulse 0.8s ease-in-out infinite alternate;
-}
-
-@keyframes page-loader-pulse {
-  0% { height: 30%; opacity: 0.5; }
-  100% { height: 100%; opacity: 1; }
-}
-
 /* ===================================================================
    Root hero — premium animated background
    =================================================================== */

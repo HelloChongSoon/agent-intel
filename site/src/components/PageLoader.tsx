@@ -74,20 +74,14 @@ export default function PageLoader() {
     };
   }, []);
 
-  if (!isActive) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-opacity duration-200">
-      <div className="flex flex-col items-center gap-4">
-        {/* Animated bar chart icon */}
-        <div className="flex items-end gap-1.5 h-12">
-          <div className="w-2.5 rounded-t bg-gradient-to-t from-sky-400/50 to-sky-400 page-loader-bar" style={{ animationDelay: '0ms' }} />
-          <div className="w-2.5 rounded-t bg-gradient-to-t from-sky-400/60 to-sky-400 page-loader-bar" style={{ animationDelay: '120ms' }} />
-          <div className="w-2.5 rounded-t bg-gradient-to-t from-indigo-400/70 to-indigo-400 page-loader-bar" style={{ animationDelay: '240ms' }} />
-          <div className="w-2.5 rounded-t bg-gradient-to-t from-indigo-400/80 to-indigo-400 page-loader-bar" style={{ animationDelay: '360ms' }} />
-        </div>
-        <span className="text-xs font-medium tracking-widest uppercase text-zinc-500">Loading</span>
-      </div>
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none fixed inset-x-0 top-0 z-[60] h-1 transition-opacity duration-200 ${
+        isActive ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
+      <div className="route-loading-bar h-full w-full" />
     </div>
   );
 }
