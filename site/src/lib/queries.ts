@@ -239,6 +239,8 @@ export interface TransactionRow {
   location: string;
 }
 
+const SUPABASE_BATCH_SIZE = 1000;
+
 const MONTH_INDEX: Record<string, number> = {
   JAN: 0,
   FEB: 1,
@@ -268,18 +270,33 @@ function getTransactionDateSortKey(value: string): number {
 export async function getAgentTransactions(ceaNumber: string): Promise<TransactionRow[]> {
   const supabase = await getSupabase();
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('date, property_type, transaction_type, role, location')
-    .eq('cea_number', ceaNumber)
-    .order('date', { ascending: false });
 
-  if (error) {
-    console.error('getAgentTransactions failed:', error.message);
-    return [];
+  const rows: TransactionRow[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('date, property_type, transaction_type, role, location')
+      .eq('cea_number', ceaNumber)
+      .range(from, from + SUPABASE_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error('getAgentTransactions failed:', error.message);
+      return [];
+    }
+
+    const batch = (data || []) as TransactionRow[];
+    rows.push(...batch);
+
+    if (batch.length < SUPABASE_BATCH_SIZE) {
+      break;
+    }
+
+    from += SUPABASE_BATCH_SIZE;
   }
 
-  return ((data || []) as TransactionRow[]).sort(
+  return rows.sort(
     (a, b) => getTransactionDateSortKey(b.date) - getTransactionDateSortKey(a.date)
   );
 }

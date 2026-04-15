@@ -20,13 +20,13 @@ describe('page metadata', () => {
     const metadata = await pageModule.generateMetadata();
 
     expect(createPageMetadata).toHaveBeenCalledWith({
-      title: 'PropNext Intel',
-      description: 'Singapore property agent rankings, profiles, and movement intelligence.',
+      title: 'Singapore Property Agent Rankings & Intelligence',
+      description: 'Compare Singapore property agents by transaction volume, track agency movements, and explore agent profiles powered by official CEA data.',
       path: '/',
     });
     expect(metadata).toEqual({
-      title: 'PropNext Intel',
-      description: 'Singapore property agent rankings, profiles, and movement intelligence.',
+      title: 'Singapore Property Agent Rankings & Intelligence',
+      description: 'Compare Singapore property agents by transaction volume, track agency movements, and explore agent profiles powered by official CEA data.',
       path: '/',
     });
   });
@@ -47,8 +47,8 @@ describe('page metadata', () => {
     await pageModule.generateMetadata();
 
     expect(createPageMetadata).toHaveBeenCalledWith({
-      title: 'PropNext',
-      description: 'PropNext is building Singapore property intelligence products for Singapore consumers and market watchers.',
+      title: 'PropNext — Singapore Property Intelligence Platform',
+      description: 'PropNext builds property intelligence tools for Singapore consumers, starting with agent rankings, movement tracking, and profile data.',
       path: '/',
     });
   });
