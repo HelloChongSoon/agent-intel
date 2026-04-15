@@ -301,10 +301,25 @@ export default async function AgentPage({ params, searchParams }: Props) {
   const topRecentAreas = [...recentAreaCounts.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
-  const recentMonths = [...monthlyActivity.entries()]
-    .sort((a, b) => getTransactionSortKey(b[0]) - getTransactionSortKey(a[0]))
-    .slice(0, 12)
-    .reverse();
+  // Build continuous 12-month range (fill gaps with zero)
+  const MONTH_ABBREVS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const sortedMonths = [...monthlyActivity.entries()]
+    .sort((a, b) => getTransactionSortKey(b[0]) - getTransactionSortKey(a[0]));
+  const recentMonths: [string, number][] = [];
+  if (sortedMonths.length > 0) {
+    const latest = sortedMonths[0][0];
+    const latestMatch = latest.match(/^([A-Z]{3})-(\d{4})$/);
+    if (latestMatch) {
+      let m = MONTH_INDEX[latestMatch[1]] ?? 0;
+      let y = Number(latestMatch[2]);
+      for (let i = 0; i < 12; i++) {
+        const key = `${MONTH_ABBREVS[m]}-${y}`;
+        recentMonths.unshift([key, monthlyActivity.get(key) || 0]);
+        m--;
+        if (m < 0) { m = 11; y--; }
+      }
+    }
+  }
   const monthlyPeak = Math.max(...recentMonths.map(([, count]) => count), 1);
   const uniqueAreas = new Set(
     transactions
