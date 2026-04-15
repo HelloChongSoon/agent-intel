@@ -403,8 +403,36 @@ export default async function AgentPage({ params, searchParams }: Props) {
     },
   };
 
+  const BAR_COLORS = [
+    'from-blue-500 to-blue-400',
+    'from-blue-500/80 to-sky-400/80',
+    'from-sky-500/70 to-cyan-400/70',
+    'from-cyan-500/60 to-teal-400/60',
+  ];
+
+  const ROLE_COLORS = [
+    'from-blue-500 to-blue-400',
+    'from-emerald-500 to-emerald-400',
+    'from-amber-500 to-amber-400',
+  ];
+
+  const maxRole = topRoles.length > 0 ? topRoles[0][1] : 1;
+
+  function getMovementBadge(type: string): { label: string; cls: string } {
+    switch (type) {
+      case 'new_registration':
+        return { label: 'New', cls: 'bg-emerald-500/10 text-emerald-400 dark:bg-emerald-500/10 dark:text-emerald-400' };
+      case 'deregistration':
+        return { label: 'Left', cls: 'bg-rose-500/10 text-rose-400 dark:bg-rose-500/10 dark:text-rose-400' };
+      case 'reregistration':
+        return { label: 'Rejoined', cls: 'bg-sky-500/10 text-sky-400 dark:bg-sky-500/10 dark:text-sky-400' };
+      default:
+        return { label: 'Transfer', cls: 'bg-amber-500/10 text-amber-400 dark:bg-amber-500/10 dark:text-amber-400' };
+    }
+  }
+
   return (
-    <div className="space-y-6 py-2">
+    <div className="space-y-5 py-2">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
@@ -416,235 +444,229 @@ export default async function AgentPage({ params, searchParams }: Props) {
           { label: agent.name },
         ]}
       />
-      <Link href="/leaderboard" className="inline-block text-sm text-zinc-400 transition hover:text-zinc-100">
-        &larr; Back to Leaderboard
-      </Link>
 
-      <section className="rounded-[28px] border border-zinc-800 bg-zinc-950/90 p-6">
-        <h2 className="text-xl font-semibold text-zinc-100">Profile summary</h2>
-        <p className="mt-3 text-sm leading-7 text-zinc-400">
-          {agent.name} is listed on PropNext Intel with public registration context, visible transaction history, and market-position signals that help consumers judge recency, specialization, and fit.
-        </p>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">Key takeaways</div>
-            <p className="mt-2 text-sm text-zinc-300">Latest visible activity: {formatDateLabel(latestTransaction)}</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">Main specialty</div>
-            <p className="mt-2 text-sm text-zinc-300">{topPropertyTypes[0] ? formatLabel(topPropertyTypes[0][0]) : 'No visible mix yet'}</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">Agency context</div>
-            <p className="mt-2 text-sm text-zinc-300">{agent.agency || 'Independent / unavailable'}</p>
-          </div>
-        </div>
-      </section>
+      {/* ── Hero ────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 sm:rounded-[28px]">
+        {/* Accent gradient line */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600" />
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/90 sm:rounded-[28px]">
-        <div className="border-b border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black px-4 py-5 sm:px-6 sm:py-7">
-          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="bg-gradient-to-br from-zinc-100 via-white to-zinc-50 px-5 pb-5 pt-6 dark:from-zinc-900 dark:via-zinc-950 dark:to-black sm:px-7 sm:pb-7 sm:pt-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <div className="text-xs uppercase tracking-[0.22em] text-zinc-500">Agent Profile</div>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50 sm:mt-3 sm:text-3xl md:text-4xl">
-                {agent.name}
-              </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-400 sm:mt-3 sm:text-sm">
-                <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-2.5 py-0.5 sm:px-3 sm:py-1">
-                  CEA {ceaNumber}
-                </span>
-                <span className="truncate rounded-full border border-zinc-700 bg-zinc-900/80 px-2.5 py-0.5 sm:px-3 sm:py-1">
-                  {agent.agency || 'Independent'}
-                </span>
+              <div className="flex items-center gap-2.5">
+                {/* Initials avatar */}
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-sky-500 text-sm font-bold text-white shadow-lg shadow-blue-500/20">
+                  {agent.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                </div>
+                <div className="min-w-0">
+                  <h1 className="truncate text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-2xl md:text-3xl">
+                    {agent.name}
+                  </h1>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-zinc-500">
+                    <span>CEA {ceaNumber}</span>
+                    <span className="text-zinc-300 dark:text-zinc-700">&middot;</span>
+                    <span className="truncate">{agent.agency || 'Independent'}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:min-w-[220px] sm:grid-cols-1 sm:text-right">
+            <div className="flex gap-5 sm:shrink-0 sm:text-right">
               <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Verified Transactions</div>
-                <div className="mt-1 text-2xl font-semibold text-zinc-50 sm:text-3xl">{formatCount(totalTransactions)}</div>
+                <div className="text-2xl font-bold tabular-nums text-zinc-900 dark:text-zinc-50 sm:text-3xl">{formatCount(totalTransactions)}</div>
+                <div className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-zinc-400">Transactions</div>
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Latest Activity</div>
-                <div className="mt-1 text-sm font-medium text-zinc-200">{formatDateLabel(latestTransaction)}</div>
+              <div className="border-l border-zinc-200 pl-5 dark:border-zinc-800">
+                <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{formatDateLabel(latestTransaction)}</div>
+                <div className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-zinc-400">Latest</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:gap-4 sm:px-6 sm:py-6 md:grid-cols-4">
-          <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Agency</div>
-            <div className="mt-1 text-sm font-medium text-zinc-100">{agent.agency || '—'}</div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Phone</div>
-            <div className="mt-1 text-sm text-zinc-100">
-              <RevealContact kind="phone" value={agent.phone} />
-            </div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Email</div>
-            <div className="mt-1 text-sm text-zinc-100">
-              <RevealContact kind="email" value={agent.email} />
-            </div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Registration</div>
-            <div className="mt-1 text-sm text-zinc-100">
-              {formatDateLabel(agent.registration_start)} to {formatDateLabel(agent.registration_end)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_1fr_1fr]">
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-sm font-medium text-zinc-100">Transaction Snapshot</div>
-              <div className="mt-1 text-sm text-zinc-500">How this agent&apos;s verified records break down.</div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-semibold text-zinc-50">{formatCount(totalTransactions)}</div>
-              <div className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-500">Total Records</div>
-            </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            {topTransactionTypes.map(([type, count]) => (
-              <div key={type} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-                <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">{formatLabel(type)}</div>
-                <div className="mt-2 text-xl font-semibold text-zinc-50">{formatCount(count)}</div>
+        <div className="grid grid-cols-2 gap-px border-t border-zinc-200 bg-zinc-200 dark:border-zinc-800 dark:bg-zinc-800 md:grid-cols-4">
+          {[
+            { label: 'Agency', value: agent.agency || '—' },
+            { label: 'Phone', kind: 'phone' as const, contact: agent.phone },
+            { label: 'Email', kind: 'email' as const, contact: agent.email },
+            { label: 'Registration', value: `${formatDateLabel(agent.registration_start)} — ${formatDateLabel(agent.registration_end)}` },
+          ].map((item) => (
+            <div key={item.label} className="bg-white px-4 py-3.5 dark:bg-zinc-950 sm:px-5">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">{item.label}</div>
+              <div className="mt-1 truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">
+                {item.contact !== undefined ? <RevealContact kind={item.kind!} value={item.contact} /> : item.value}
               </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="text-sm font-medium text-zinc-100">Property Mix</div>
-          <div className="mt-1 text-sm text-zinc-500">Top property types by transaction count.</div>
-          <div className="mt-3 space-y-2">
-            {topPropertyTypes.map(([type, count]) => (
-              <div key={type} className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-zinc-400">{formatLabel(type)}</span>
-                  <span className="font-medium text-zinc-100">{formatCount(count)}</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
-                  <div
-                    className="h-full rounded-full bg-zinc-200"
-                    style={{ width: `${Math.max(8, Math.round((count / totalTransactions) * 100))}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="text-sm font-medium text-zinc-100">Representation</div>
-          <div className="mt-1 text-sm text-zinc-500">Most common roles across completed deals.</div>
-          <div className="mt-3 space-y-2">
-            {topRoles.map(([role, count]) => (
-              <div key={role} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-sm">
-                <span className="text-zinc-300">{formatLabel(role)}</span>
-                <span className="font-medium text-zinc-100">{formatCount(count)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_0.9fr]">
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <div className="text-sm font-medium text-zinc-100">12-Month Activity</div>
-              <div className="mt-1 text-sm text-zinc-500">Recent monthly transaction volume for this agent.</div>
-            </div>
-            <div className="text-sm text-zinc-400">
-              Peak month: <span className="font-medium text-zinc-100">{formatCount(monthlyPeak)}</span>
-            </div>
-          </div>
-          <div className="mt-6 grid grid-cols-12 items-end gap-2">
-            {recentMonths.map(([bucket, count]) => (
-              <div key={bucket} className="flex flex-col items-center gap-2">
-                <div className="text-[11px] text-zinc-500">{formatCount(count)}</div>
-                <div
-                  className="w-full rounded-t-md bg-zinc-100/90"
-                  style={{ height: `${Math.max(20, Math.round((count / monthlyPeak) * 120))}px` }}
-                  aria-hidden="true"
-                />
-                <div className="text-center text-[11px] leading-tight text-zinc-500">
-                  {(() => { const f = formatMonthBucket(bucket); return f ? <>{f.month}<br />{f.year}</> : bucket; })()}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="text-sm font-medium text-zinc-100">Coverage Snapshot</div>
-          <div className="mt-1 text-sm text-zinc-500">Useful context at a glance.</div>
-          <div className="mt-5 space-y-3">
-            <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-              <span className="text-sm text-zinc-400">Unique areas</span>
-              <span className="text-lg font-semibold text-zinc-50">{formatCount(uniqueAreas)}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-              <span className="text-sm text-zinc-400">Property categories</span>
-              <span className="text-lg font-semibold text-zinc-50">{formatCount(propertyTypes.size)}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-              <span className="text-sm text-zinc-400">Deal types</span>
-              <span className="text-lg font-semibold text-zinc-50">{formatCount(transactionTypes.size)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="text-sm font-medium text-zinc-100">Recent Deals by Area</div>
-            <div className="mt-1 text-sm text-zinc-500">Most active locations across the latest transaction records.</div>
-          </div>
-          <div className="text-sm text-zinc-400">
-            Based on the latest <span className="font-medium text-zinc-100">{Math.min(60, transactions.length)}</span> records
-          </div>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-3">
-          {topRecentAreas.map(([area, count], index) => (
-            <div
-              key={area}
-              className="inline-flex items-center gap-3 rounded-full border border-zinc-800 bg-zinc-900/60 px-4 py-2"
-            >
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-950">
-                {index + 1}
-              </span>
-              <span className="text-sm text-zinc-200">{area}</span>
-              <span className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
-                {formatCount(count)} deals
-              </span>
             </div>
           ))}
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90">
-        <div className="border-b border-zinc-800 px-6 py-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-zinc-100">Movement History</h2>
-              <p className="mt-1 text-sm text-zinc-500">Agency transfers and registration events tied to this profile.</p>
+      {/* ── Key Stats Row ───────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Transaction Snapshot */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <div className="flex items-start justify-between">
+            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Transaction Snapshot</div>
+            <div className="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold tabular-nums text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+              {formatCount(totalTransactions)} total
             </div>
-            <Link
-              href="/movements"
-              className="inline-flex items-center rounded-full border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-100"
-            >
-              View all movements
-            </Link>
           </div>
+          <div className="mt-4 grid grid-cols-2 gap-2.5">
+            {topTransactionTypes.map(([type, count]) => {
+              const pct = totalTransactions > 0 ? Math.round((count / totalTransactions) * 100) : 0;
+              return (
+                <div key={type} className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/40">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">{formatLabel(type)}</div>
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(count)}</span>
+                    <span className="text-[11px] text-zinc-400">{pct}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Property Mix */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Property Mix</div>
+          <div className="mt-4 space-y-3">
+            {topPropertyTypes.map(([type, count], i) => {
+              const pct = totalTransactions > 0 ? Math.round((count / totalTransactions) * 100) : 0;
+              return (
+                <div key={type}>
+                  <div className="mb-1.5 flex items-baseline justify-between">
+                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">{formatLabel(type)}</span>
+                    <span className="text-xs tabular-nums text-zinc-400">{formatCount(count)} <span className="text-zinc-300 dark:text-zinc-600">({pct}%)</span></span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${BAR_COLORS[i] || BAR_COLORS[BAR_COLORS.length - 1]}`}
+                      style={{ width: `${Math.max(6, pct)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Representation + Coverage */}
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Representation</div>
+            <div className="mt-3 space-y-2.5">
+              {topRoles.map(([role, count], i) => (
+                <div key={role} className="flex items-center gap-3">
+                  <div className="w-20 shrink-0 text-xs font-medium text-zinc-500">{formatLabel(role)}</div>
+                  <div className="relative h-5 flex-1 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded-md bg-gradient-to-r ${ROLE_COLORS[i] || ROLE_COLORS[ROLE_COLORS.length - 1]}`}
+                      style={{ width: `${Math.max(8, Math.round((count / maxRole) * 100))}%` }}
+                    />
+                    <span className="relative z-10 flex h-full items-center px-2 text-[11px] font-bold tabular-nums text-white drop-shadow-sm">
+                      {formatCount(count)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            {[
+              { icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>, label: 'Areas', value: uniqueAreas },
+              { icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" /></svg>, label: 'Types', value: propertyTypes.size },
+              { icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>, label: 'Deal types', value: transactionTypes.size },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center rounded-xl border border-zinc-200 bg-white p-3 text-center dark:border-zinc-800 dark:bg-zinc-950/90">
+                <div className="text-zinc-400">{stat.icon}</div>
+                <div className="mt-1 text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(stat.value)}</div>
+                <div className="text-[10px] font-medium uppercase tracking-widest text-zinc-400">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 12-Month Activity ───────────────────────────────── */}
+      <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">12-Month Activity</div>
+            <div className="mt-0.5 text-xs text-zinc-400">Monthly transaction volume</div>
+          </div>
+          <div className="text-xs text-zinc-400">
+            Peak: <span className="font-bold text-zinc-700 dark:text-zinc-200">{formatCount(monthlyPeak)}</span>
+          </div>
+        </div>
+        {/* Grid lines */}
+        <div className="relative mt-5">
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none" style={{ bottom: '32px' }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="border-t border-dashed border-zinc-100 dark:border-zinc-800/60" />
+            ))}
+          </div>
+          <div className="relative grid grid-cols-12 items-end gap-1.5 sm:gap-2">
+            {recentMonths.map(([bucket, count]) => {
+              const height = monthlyPeak > 0 ? Math.round((count / monthlyPeak) * 100) : 0;
+              return (
+                <div key={bucket} className="flex flex-col items-center gap-1">
+                  <div className="text-[10px] font-medium tabular-nums text-zinc-400 sm:text-[11px]">{count > 0 ? formatCount(count) : ''}</div>
+                  <div
+                    className={`w-full rounded-t-md ${count > 0 ? 'bg-gradient-to-t from-blue-600 to-sky-400' : 'bg-zinc-100 dark:bg-zinc-800/40'}`}
+                    style={{ height: `${Math.max(4, height)}px`, minHeight: '4px' }}
+                    aria-hidden="true"
+                  />
+                  <div className="text-center text-[9px] leading-tight text-zinc-400 sm:text-[10px]">
+                    {(() => { const f = formatMonthBucket(bucket); return f ? <>{f.month}<br />{f.year}</> : bucket; })()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Recent Deals by Area ────────────────────────────── */}
+      {topRecentAreas.length > 0 && (
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Active Areas</div>
+              <div className="mt-0.5 text-xs text-zinc-400">Based on the latest {Math.min(60, transactions.length)} records</div>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {topRecentAreas.map(([area, count], index) => (
+              <div
+                key={area}
+                className="group inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 py-1.5 pl-1.5 pr-3.5 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-700"
+              >
+                <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${index < 3 ? 'bg-gradient-to-br from-blue-600 to-sky-500' : 'bg-zinc-400 dark:bg-zinc-600'}`}>
+                  {index + 1}
+                </span>
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">{area}</span>
+                <span className="text-[10px] tabular-nums text-zinc-400">{formatCount(count)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Movement History ─────────────────────────────────── */}
+      <section className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Movement History</h2>
+            <p className="mt-0.5 text-xs text-zinc-400">Agency transfers and registration events</p>
+          </div>
+          <Link
+            href="/movements"
+            className="rounded-full bg-zinc-200/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-600 transition hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          >
+            View all
+          </Link>
         </div>
 
         {agentMovements.length > 0 ? (
@@ -652,37 +674,36 @@ export default async function AgentPage({ params, searchParams }: Props) {
             <div className="hidden md:block">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-zinc-800 text-left">
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Date</th>
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">From</th>
-                    <th className="w-12 px-2 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">To</th>
-                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Destination</th>
+                  <tr className="border-b border-zinc-100 bg-white dark:border-zinc-800/60 dark:bg-zinc-950">
+                    <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Date</th>
+                    <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Type</th>
+                    <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">From</th>
+                    <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Destination</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-900">
+                <tbody className="divide-y divide-zinc-100 bg-white dark:divide-zinc-800/40 dark:bg-zinc-950/80">
                   {agentMovements.map((movement) => {
                     const movementColumns = getMovementColumns(movement);
+                    const badge = getMovementBadge(movement.type);
 
                     return (
-                      <tr key={movement.id} className="transition hover:bg-zinc-900/60">
-                        <td className="px-6 py-4 text-sm text-zinc-300">{formatDateLabel(movement.date)}</td>
-                        <td className="px-6 py-4 text-sm text-zinc-100">
+                      <tr key={movement.id} className="transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+                        <td className="px-5 py-3 text-xs tabular-nums text-zinc-500">{formatDateLabel(movement.date)}</td>
+                        <td className="px-5 py-3">
+                          <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${badge.cls}`}>
+                            {badge.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-xs text-zinc-700 dark:text-zinc-200">
                           {movementColumns.from.agencySlug ? (
-                            <Link
-                              href={`/agency/${movementColumns.from.agencySlug}`}
-                              className="transition hover:text-white"
-                            >
+                            <Link href={`/agency/${movementColumns.from.agencySlug}`} className="transition hover:text-blue-600 dark:hover:text-blue-400">
                               {movementColumns.from.label}
                             </Link>
                           ) : movementColumns.from.label}
                         </td>
-                        <td className="px-2 py-4 text-center text-zinc-500">-&gt;</td>
-                        <td className="px-6 py-4 text-sm text-zinc-100">
+                        <td className="px-5 py-3 text-xs font-medium text-zinc-800 dark:text-zinc-100">
                           {movementColumns.to.agencySlug ? (
-                            <Link
-                              href={`/agency/${movementColumns.to.agencySlug}`}
-                              className="text-blue-400 transition hover:text-blue-300"
-                            >
+                            <Link href={`/agency/${movementColumns.to.agencySlug}`} className="text-blue-600 transition hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
                               {movementColumns.to.label}
                             </Link>
                           ) : movementColumns.to.label}
@@ -694,40 +715,27 @@ export default async function AgentPage({ params, searchParams }: Props) {
               </table>
             </div>
 
-            <div className="divide-y divide-zinc-900 md:hidden">
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/40 md:hidden">
               {agentMovements.map((movement) => {
                 const movementColumns = getMovementColumns(movement);
+                const badge = getMovementBadge(movement.type);
 
                 return (
-                  <div key={movement.id} className="space-y-3 px-5 py-4">
-                    <div className="text-xs uppercase tracking-[0.16em] text-zinc-500">{formatDateLabel(movement.date)}</div>
-                    <div className="grid gap-3">
-                      <div>
-                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">From</div>
-                        <div className="mt-1 text-sm text-zinc-100">
-                          {movementColumns.from.agencySlug ? (
-                            <Link
-                              href={`/agency/${movementColumns.from.agencySlug}`}
-                              className="transition hover:text-white"
-                            >
-                              {movementColumns.from.label}
-                            </Link>
-                          ) : movementColumns.from.label}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">To</div>
-                        <div className="mt-1 text-sm text-zinc-100">
-                          {movementColumns.to.agencySlug ? (
-                            <Link
-                              href={`/agency/${movementColumns.to.agencySlug}`}
-                              className="text-blue-400 transition hover:text-blue-300"
-                            >
-                              {movementColumns.to.label}
-                            </Link>
-                          ) : movementColumns.to.label}
-                        </div>
-                      </div>
+                  <div key={movement.id} className="bg-white px-4 py-3.5 dark:bg-zinc-950/80">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                      <span className="text-[11px] tabular-nums text-zinc-400">{formatDateLabel(movement.date)}</span>
+                    </div>
+                    <div className="mt-2 text-xs text-zinc-500">
+                      {movementColumns.from.agencySlug ? (
+                        <Link href={`/agency/${movementColumns.from.agencySlug}`} className="text-zinc-700 transition hover:text-blue-600 dark:text-zinc-200 dark:hover:text-blue-400">{movementColumns.from.label}</Link>
+                      ) : <span className="text-zinc-700 dark:text-zinc-200">{movementColumns.from.label}</span>}
+                      {' '}<span className="text-zinc-300 dark:text-zinc-600">&rarr;</span>{' '}
+                      {movementColumns.to.agencySlug ? (
+                        <Link href={`/agency/${movementColumns.to.agencySlug}`} className="font-medium text-blue-600 dark:text-blue-400">{movementColumns.to.label}</Link>
+                      ) : <span className="font-medium text-zinc-800 dark:text-zinc-100">{movementColumns.to.label}</span>}
                     </div>
                   </div>
                 );
@@ -735,171 +743,79 @@ export default async function AgentPage({ params, searchParams }: Props) {
             </div>
           </>
         ) : (
-          <div className="flex min-h-[220px] flex-col items-center justify-center px-6 py-10 text-center">
-            <div className="text-3xl text-zinc-600">-&gt;</div>
-            <p className="mt-5 text-lg text-zinc-400">No movement history recorded for this agent</p>
-            <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">
-              We&apos;ll show agency transfers, new registrations, and deregistrations here when public movement records are available.
-            </p>
+          <div className="flex min-h-[180px] flex-col items-center justify-center bg-white px-6 py-10 text-center dark:bg-zinc-950/80">
+            <svg className="h-8 w-8 text-zinc-300 dark:text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+            <p className="mt-3 text-sm text-zinc-400">No movement history recorded</p>
+            <p className="mt-1 max-w-xs text-xs text-zinc-400/70">Agency transfers and registration events will appear here when available.</p>
           </div>
         )}
       </section>
 
-      {/* Transaction History */}
-      <div className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90">
-        <div className="border-b border-zinc-800 px-6 py-5">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+      {/* ── Transaction History ──────────────────────────────── */}
+      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <div className="border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-100">Transaction History</h2>
-              <p className="mt-1 text-sm text-zinc-500">
-                Showing records {filteredTransactions.length === 0 ? 0 : startIndex + 1} to {endIndex} of {formatCount(filteredTransactions.length)}.
+              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Transaction History</h2>
+              <p className="mt-0.5 text-xs text-zinc-400">
+                {filteredTransactions.length === 0 ? '0' : `${startIndex + 1}–${endIndex}`} of {formatCount(filteredTransactions.length)} records
               </p>
             </div>
-            <div className="text-sm text-zinc-400">
-              Page <span className="font-medium text-zinc-100">{safeCurrentPage}</span> of <span className="font-medium text-zinc-100">{totalPages}</span>
+            <div className="text-[11px] tabular-nums text-zinc-400">
+              Page {safeCurrentPage}/{totalPages}
             </div>
           </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-5">
-            <div>
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Property</div>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={buildAgentTransactionFilterHref(ceaNumber, {
-                    transactionType: selectedTransactionType || undefined,
-                    role: selectedRole || undefined,
-                    txYear: selectedYear || undefined,
-                    txMonth: selectedMonth || undefined,
-                  })}
-                  className={`rounded-full border px-3 py-1 text-xs transition ${!selectedPropertyType ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
-                >
-                  All
-                </Link>
-                {filters.propertyTypes.slice(0, 6).map((value) => {
-                  return (
-                    <Link
-                      key={value}
-                      href={buildAgentTransactionFilterHref(ceaNumber, {
-                        propertyType: value,
-                        transactionType: selectedTransactionType || undefined,
-                        role: selectedRole || undefined,
-                        txYear: selectedYear || undefined,
-                        txMonth: selectedMonth || undefined,
-                      })}
-                      className={`rounded-full border px-3 py-1 text-xs transition ${selectedPropertyType === value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
-                    >
-                      {formatLabel(value)}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Deal Type</div>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={buildAgentTransactionFilterHref(ceaNumber, {
-                    propertyType: selectedPropertyType || undefined,
-                    role: selectedRole || undefined,
-                    txYear: selectedYear || undefined,
-                    txMonth: selectedMonth || undefined,
-                  })}
-                  className={`rounded-full border px-3 py-1 text-xs transition ${!selectedTransactionType ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
-                >
-                  All
-                </Link>
-                {filters.transactionTypes.slice(0, 6).map((value) => {
-                  return (
-                    <Link
-                      key={value}
-                      href={buildAgentTransactionFilterHref(ceaNumber, {
-                        propertyType: selectedPropertyType || undefined,
-                        transactionType: value,
-                        role: selectedRole || undefined,
-                        txYear: selectedYear || undefined,
-                        txMonth: selectedMonth || undefined,
-                      })}
-                      className={`rounded-full border px-3 py-1 text-xs transition ${selectedTransactionType === value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
-                    >
-                      {formatLabel(value)}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Role</div>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={buildAgentTransactionFilterHref(ceaNumber, {
-                    propertyType: selectedPropertyType || undefined,
-                    transactionType: selectedTransactionType || undefined,
-                    txYear: selectedYear || undefined,
-                    txMonth: selectedMonth || undefined,
-                  })}
-                  className={`rounded-full border px-3 py-1 text-xs transition ${!selectedRole ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
-                >
-                  All
-                </Link>
-                {filters.roles.slice(0, 6).map((value) => {
-                  return (
-                    <Link
-                      key={value}
-                      href={buildAgentTransactionFilterHref(ceaNumber, {
-                        propertyType: selectedPropertyType || undefined,
-                        transactionType: selectedTransactionType || undefined,
-                        role: value,
-                        txYear: selectedYear || undefined,
-                        txMonth: selectedMonth || undefined,
-                      })}
-                      className={`rounded-full border px-3 py-1 text-xs transition ${selectedRole === value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
-                    >
-                      {formatLabel(value)}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Year</div>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={buildAgentTransactionFilterHref(ceaNumber, {
-                    propertyType: selectedPropertyType || undefined,
-                    transactionType: selectedTransactionType || undefined,
-                    role: selectedRole || undefined,
-                    txMonth: selectedMonth || undefined,
-                  })}
-                  className={`rounded-full border px-3 py-1 text-xs transition ${!selectedYear ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
-                >
-                  All
-                </Link>
-                {filters.years.slice(0, 6).map((value) => (
+          <div className="mt-4 grid gap-3 md:grid-cols-5">
+            {[
+              { label: 'Property', param: 'propertyType', selected: selectedPropertyType, values: filters.propertyTypes },
+              { label: 'Deal Type', param: 'transactionType', selected: selectedTransactionType, values: filters.transactionTypes },
+              { label: 'Role', param: 'role', selected: selectedRole, values: filters.roles },
+              { label: 'Year', param: 'txYear', selected: selectedYear, values: filters.years.map(String) },
+            ].map((group) => (
+              <div key={group.label}>
+                <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">{group.label}</div>
+                <div className="flex flex-wrap gap-1.5">
                   <Link
-                    key={value}
                     href={buildAgentTransactionFilterHref(ceaNumber, {
-                      propertyType: selectedPropertyType || undefined,
-                      transactionType: selectedTransactionType || undefined,
-                      role: selectedRole || undefined,
-                      txYear: String(value),
+                      ...(group.param !== 'propertyType' && selectedPropertyType ? { propertyType: selectedPropertyType } : {}),
+                      ...(group.param !== 'transactionType' && selectedTransactionType ? { transactionType: selectedTransactionType } : {}),
+                      ...(group.param !== 'role' && selectedRole ? { role: selectedRole } : {}),
+                      ...(group.param !== 'txYear' && selectedYear ? { txYear: selectedYear } : {}),
+                      ...(group.param !== 'txMonth' && selectedMonth ? { txMonth: selectedMonth } : {}),
                     })}
-                    className={`rounded-full border px-3 py-1 text-xs transition ${selectedYear === String(value) ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${!group.selected ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
                   >
-                    {value}
+                    All
                   </Link>
-                ))}
+                  {group.values.slice(0, 6).map((value) => (
+                    <Link
+                      key={value}
+                      href={buildAgentTransactionFilterHref(ceaNumber, {
+                        ...(group.param === 'propertyType' ? { propertyType: value } : selectedPropertyType ? { propertyType: selectedPropertyType } : {}),
+                        ...(group.param === 'transactionType' ? { transactionType: value } : selectedTransactionType ? { transactionType: selectedTransactionType } : {}),
+                        ...(group.param === 'role' ? { role: value } : selectedRole ? { role: selectedRole } : {}),
+                        ...(group.param === 'txYear' ? { txYear: value } : selectedYear ? { txYear: selectedYear } : {}),
+                        ...(group.param !== 'txMonth' && selectedMonth ? { txMonth: selectedMonth } : {}),
+                      })}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${group.selected === value ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+                    >
+                      {group.param === 'txYear' ? value : formatLabel(value)}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
             <div>
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">Month</div>
-              <div className="flex flex-wrap gap-2">
+              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Month</div>
+              <div className="flex flex-wrap gap-1.5">
                 <Link
                   href={buildAgentTransactionFilterHref(ceaNumber, {
-                    propertyType: selectedPropertyType || undefined,
-                    transactionType: selectedTransactionType || undefined,
-                    role: selectedRole || undefined,
-                    txYear: selectedYear || undefined,
+                    ...(selectedPropertyType ? { propertyType: selectedPropertyType } : {}),
+                    ...(selectedTransactionType ? { transactionType: selectedTransactionType } : {}),
+                    ...(selectedRole ? { role: selectedRole } : {}),
+                    ...(selectedYear ? { txYear: selectedYear } : {}),
                   })}
-                  className={`rounded-full border px-3 py-1 text-xs transition ${!selectedMonth ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${!selectedMonth ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
                 >
                   All
                 </Link>
@@ -907,13 +823,13 @@ export default async function AgentPage({ params, searchParams }: Props) {
                   <Link
                     key={option.value}
                     href={buildAgentTransactionFilterHref(ceaNumber, {
-                      propertyType: selectedPropertyType || undefined,
-                      transactionType: selectedTransactionType || undefined,
-                      role: selectedRole || undefined,
-                      txYear: selectedYear || undefined,
+                      ...(selectedPropertyType ? { propertyType: selectedPropertyType } : {}),
+                      ...(selectedTransactionType ? { transactionType: selectedTransactionType } : {}),
+                      ...(selectedRole ? { role: selectedRole } : {}),
+                      ...(selectedYear ? { txYear: selectedYear } : {}),
                       txMonth: option.value,
                     })}
-                    className={`rounded-full border px-3 py-1 text-xs transition ${selectedMonth === option.value ? 'border-zinc-100 bg-zinc-100 text-zinc-950' : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-zinc-100'}`}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${selectedMonth === option.value ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
                   >
                     {option.label}
                   </Link>
@@ -922,31 +838,31 @@ export default async function AgentPage({ params, searchParams }: Props) {
             </div>
           </div>
         </div>
+
         <div className="hidden md:block">
           <div className="max-h-[900px] overflow-auto">
             <table className="w-full">
-              <thead className="sticky top-0 z-10 bg-zinc-950">
-                <tr className="border-b border-zinc-800">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Property</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">District</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Location</th>
+              <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-950">
+                <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Date</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Property</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Type</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Role</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">District</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Location</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-900">
+              <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800/40">
                 {paginatedTransactions.map((tx, i) => {
                   const { district, area } = splitLocation(tx.location);
-
                   return (
-                    <tr key={i} className="transition hover:bg-zinc-900/60">
-                      <td className="px-6 py-3 text-xs text-zinc-300">{formatDateLabel(tx.date)}</td>
-                      <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.property_type)}</td>
-                      <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.transaction_type)}</td>
-                      <td className="px-6 py-3 text-xs text-zinc-300">{formatLabel(tx.role)}</td>
-                      <td className="px-6 py-3 text-xs text-zinc-300">{district}</td>
-                      <td className="px-6 py-3 text-xs text-zinc-400">{area}</td>
+                    <tr key={i} className="bg-white transition hover:bg-zinc-50 dark:bg-zinc-950/80 dark:hover:bg-zinc-900/40">
+                      <td className="px-5 py-2.5 text-xs tabular-nums text-zinc-500">{formatDateLabel(tx.date)}</td>
+                      <td className="px-5 py-2.5 text-xs font-medium text-zinc-700 dark:text-zinc-200">{formatLabel(tx.property_type)}</td>
+                      <td className="px-5 py-2.5 text-xs text-zinc-600 dark:text-zinc-300">{formatLabel(tx.transaction_type)}</td>
+                      <td className="px-5 py-2.5 text-xs text-zinc-500">{formatLabel(tx.role)}</td>
+                      <td className="px-5 py-2.5 text-xs tabular-nums text-zinc-500">{district}</td>
+                      <td className="px-5 py-2.5 text-xs text-zinc-400">{area}</td>
                     </tr>
                   );
                 })}
@@ -954,41 +870,38 @@ export default async function AgentPage({ params, searchParams }: Props) {
             </table>
           </div>
         </div>
-        <div className="divide-y divide-zinc-900 md:hidden">
+
+        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/40 md:hidden">
           {paginatedTransactions.map((tx, i) => {
             const { district, area } = splitLocation(tx.location);
-
             return (
-              <div key={i} className="space-y-3 px-5 py-4">
-                <div className="flex items-start justify-between gap-4">
+              <div key={i} className="bg-white px-4 py-3 dark:bg-zinc-950/80">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-zinc-100">{formatLabel(tx.transaction_type)}</div>
-                    <div className="mt-1 text-xs text-zinc-500">{formatDateLabel(tx.date)}</div>
+                    <div className="text-xs font-medium text-zinc-800 dark:text-zinc-100">{formatLabel(tx.transaction_type)}</div>
+                    <div className="mt-0.5 text-[11px] tabular-nums text-zinc-400">{formatDateLabel(tx.date)}</div>
                   </div>
-                  <span className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-zinc-300">
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
                     {formatLabel(tx.role)}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
                   <div>
-                    <div className="uppercase tracking-[0.16em] text-zinc-500">Property</div>
-                    <div className="mt-1 text-zinc-300">{formatLabel(tx.property_type)}</div>
+                    <div className="font-medium uppercase tracking-wider text-zinc-400">Property</div>
+                    <div className="mt-0.5 text-zinc-600 dark:text-zinc-300">{formatLabel(tx.property_type)}</div>
                   </div>
                   <div>
-                    <div className="uppercase tracking-[0.16em] text-zinc-500">District</div>
-                    <div className="mt-1 text-zinc-300">{district}</div>
-                  </div>
-                  <div className="col-span-2">
-                    <div className="uppercase tracking-[0.16em] text-zinc-500">Location</div>
-                    <div className="mt-1 text-zinc-400">{area}</div>
+                    <div className="font-medium uppercase tracking-wider text-zinc-400">D{district}</div>
+                    <div className="mt-0.5 truncate text-zinc-500">{area}</div>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
+
         {filteredTransactions.length > pageSize && (
-          <div className="border-t border-zinc-800 px-6 py-5">
+          <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
             <Pagination
               currentPage={safeCurrentPage}
               totalPages={totalPages}
@@ -1000,36 +913,29 @@ export default async function AgentPage({ params, searchParams }: Props) {
         )}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <h2 className="text-xl font-semibold text-zinc-100">What this means</h2>
-          <p className="mt-3 text-sm leading-7 text-zinc-400">
-            Consumers should use this page to check whether the agent&apos;s visible activity aligns with the property segment and role they actually need. Transaction volume is useful, but fit and recency are usually more important.
+      {/* ── Insights + Comparable Agents ─────────────────────── */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">What this means</h2>
+          <p className="mt-2 text-xs leading-5 text-zinc-500">
+            Use this page to check whether the agent&apos;s visible activity aligns with the property segment and role you need. Fit and recency matter more than volume.
           </p>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-1.5">
             {topPropertyTypes.slice(0, 3).map(([type]) => (
-              <Link
-                key={type}
-                href={`/property-type/${slugifySegment(type)}`}
-                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
-              >
+              <Link key={type} href={`/property-type/${slugifySegment(type)}`}
+                className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
                 {formatLabel(type)}
               </Link>
             ))}
             {topTransactionTypes.slice(0, 2).map(([type]) => (
-              <Link
-                key={type}
-                href={`/transaction-type/${slugifySegment(type)}`}
-                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
-              >
+              <Link key={type} href={`/transaction-type/${slugifySegment(type)}`}
+                className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
                 {formatLabel(type)}
               </Link>
             ))}
             {agent.agency && (
-              <Link
-                href={`/agency/${slugifySegment(agent.agency)}`}
-                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
-              >
+              <Link href={`/agency/${slugifySegment(agent.agency)}`}
+                className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
                 {agent.agency}
               </Link>
             )}
@@ -1037,23 +943,21 @@ export default async function AgentPage({ params, searchParams }: Props) {
         </section>
 
         {similarVolumeAgents.length > 0 && (
-          <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-            <h2 className="text-xl font-semibold text-zinc-100">Similar transaction volume</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-400">
-              Agents with a comparable number of recorded transactions across all property types.
-            </p>
-            <div className="mt-5 space-y-3">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Similar transaction volume</h2>
+            <p className="mt-1 text-xs text-zinc-400">Agents with comparable transaction counts</p>
+            <div className="mt-3 space-y-2">
               {similarVolumeAgents.map((comparable) => (
-                <Link
-                  key={comparable.cea_number}
-                  href={`/agent/${comparable.cea_number}`}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-zinc-700"
-                >
-                  <div>
-                    <div className="text-sm font-medium text-zinc-100">{comparable.name}</div>
-                    <div className="mt-1 text-xs text-zinc-500">{comparable.agency || 'Independent'}</div>
+                <Link key={comparable.cea_number} href={`/agent/${comparable.cea_number}`}
+                  className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-2.5 transition hover:border-zinc-200 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-zinc-700">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                    {comparable.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
                   </div>
-                  <div className="text-sm font-semibold text-zinc-100">{formatCount(comparable.total_transactions || 0)} txns</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{comparable.name}</div>
+                    <div className="text-[11px] text-zinc-400">{comparable.agency || 'Independent'}</div>
+                  </div>
+                  <div className="text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{formatCount(comparable.total_transactions || 0)}</div>
                 </Link>
               ))}
             </div>
@@ -1061,68 +965,68 @@ export default async function AgentPage({ params, searchParams }: Props) {
         )}
 
         {sameAreaAgents.length > 0 && topArea && (
-          <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-            <h2 className="text-xl font-semibold text-zinc-100">Active in {topArea}</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-400">
-              Other agents frequently transacting in {topArea}.
-            </p>
-            <div className="mt-5 space-y-3">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Active in {topArea}</h2>
+                <p className="mt-1 text-xs text-zinc-400">Other agents frequently transacting here</p>
+              </div>
+              <Link href={`/area/${slugifySegment(topArea)}`}
+                className="shrink-0 text-[11px] font-semibold text-blue-600 transition hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                View all &rarr;
+              </Link>
+            </div>
+            <div className="mt-3 space-y-2">
               {sameAreaAgents.map((comparable) => (
-                <Link
-                  key={comparable.cea_number}
-                  href={`/agent/${comparable.cea_number}`}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-zinc-700"
-                >
-                  <div>
-                    <div className="text-sm font-medium text-zinc-100">{comparable.name}</div>
-                    <div className="mt-1 text-xs text-zinc-500">{comparable.agency || 'Independent'}</div>
+                <Link key={comparable.cea_number} href={`/agent/${comparable.cea_number}`}
+                  className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-2.5 transition hover:border-zinc-200 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-zinc-700">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                    {comparable.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{comparable.name}</div>
+                    <div className="text-[11px] text-zinc-400">{comparable.agency || 'Independent'}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-zinc-100">{formatCount(comparable.area_count)} in area</div>
-                    <div className="mt-1 text-xs text-zinc-500">{formatCount(comparable.total_transactions || 0)} total</div>
+                    <div className="text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{formatCount(comparable.area_count)}</div>
+                    <div className="text-[10px] text-zinc-400">in area</div>
                   </div>
                 </Link>
               ))}
             </div>
-            <Link
-              href={`/area/${slugifySegment(topArea)}`}
-              className="mt-4 inline-block text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
-            >
-              View all agents in {topArea} &rarr;
-            </Link>
           </section>
         )}
 
         {samePropertyTypeAgents.length > 0 && topPropertyType && (
-          <section className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-            <h2 className="text-xl font-semibold text-zinc-100">{formatLabel(topPropertyType)} specialists</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-400">
-              Other agents who primarily deal in {formatLabel(topPropertyType).toLowerCase()} properties.
-            </p>
-            <div className="mt-5 space-y-3">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{formatLabel(topPropertyType)} specialists</h2>
+                <p className="mt-1 text-xs text-zinc-400">Agents focused on {formatLabel(topPropertyType).toLowerCase()} properties</p>
+              </div>
+              <Link href={`/property-type/${slugifySegment(topPropertyType)}`}
+                className="shrink-0 text-[11px] font-semibold text-blue-600 transition hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                View all &rarr;
+              </Link>
+            </div>
+            <div className="mt-3 space-y-2">
               {samePropertyTypeAgents.map((comparable) => (
-                <Link
-                  key={comparable.cea_number}
-                  href={`/agent/${comparable.cea_number}`}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-zinc-700"
-                >
-                  <div>
-                    <div className="text-sm font-medium text-zinc-100">{comparable.name}</div>
-                    <div className="mt-1 text-xs text-zinc-500">{comparable.agency || 'Independent'}</div>
+                <Link key={comparable.cea_number} href={`/agent/${comparable.cea_number}`}
+                  className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-2.5 transition hover:border-zinc-200 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-zinc-700">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[10px] font-bold text-violet-700 dark:bg-violet-500/10 dark:text-violet-400">
+                    {comparable.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{comparable.name}</div>
+                    <div className="text-[11px] text-zinc-400">{comparable.agency || 'Independent'}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-zinc-100">{formatCount(comparable.type_count)} {formatLabel(topPropertyType).toLowerCase()}</div>
-                    <div className="mt-1 text-xs text-zinc-500">{formatCount(comparable.total_transactions || 0)} total</div>
+                    <div className="text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{formatCount(comparable.type_count)}</div>
+                    <div className="text-[10px] text-zinc-400">{formatLabel(topPropertyType).toLowerCase()}</div>
                   </div>
                 </Link>
               ))}
             </div>
-            <Link
-              href={`/property-type/${slugifySegment(topPropertyType)}`}
-              className="mt-4 inline-block text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
-            >
-              View all {formatLabel(topPropertyType).toLowerCase()} agents &rarr;
-            </Link>
           </section>
         )}
       </div>
