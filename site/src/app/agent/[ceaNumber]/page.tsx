@@ -168,10 +168,13 @@ function parseTransactionPeriod(value: string): { year: number | null; monthInde
   return { year: null, monthIndex: null };
 }
 
-function formatMonthBucket(value: string): string {
+function formatMonthBucket(value: string): { month: string; year: string } | null {
   const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
-  if (!periodMatch) return value;
-  return `${periodMatch[1].charAt(0)}${periodMatch[1].slice(1).toLowerCase()} ${periodMatch[2]}`;
+  if (!periodMatch) return null;
+  return {
+    month: `${periodMatch[1].charAt(0)}${periodMatch[1].slice(1).toLowerCase()}`,
+    year: periodMatch[2],
+  };
 }
 
 const MONTH_OPTIONS = [
@@ -572,7 +575,9 @@ export default async function AgentPage({ params, searchParams }: Props) {
                   style={{ height: `${Math.max(20, Math.round((count / monthlyPeak) * 120))}px` }}
                   aria-hidden="true"
                 />
-                <div className="text-center text-[11px] text-zinc-500">{formatMonthBucket(bucket)}</div>
+                <div className="text-center text-[11px] leading-tight text-zinc-500">
+                  {(() => { const f = formatMonthBucket(bucket); return f ? <>{f.month}<br />{f.year}</> : bucket; })()}
+                </div>
               </div>
             ))}
           </div>
