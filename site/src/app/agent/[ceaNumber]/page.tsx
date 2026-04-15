@@ -573,18 +573,22 @@ export default async function AgentPage({ params, searchParams }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5">
-            {[
-              { icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>, label: 'Areas', value: uniqueAreas },
-              { icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" /></svg>, label: 'Types', value: propertyTypes.size },
-              { icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>, label: 'Deal types', value: transactionTypes.size },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center rounded-xl border border-zinc-200 bg-white p-3 text-center dark:border-zinc-800 dark:bg-zinc-950/90">
-                <div className="text-zinc-400">{stat.icon}</div>
-                <div className="mt-1 text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(stat.value)}</div>
-                <div className="text-[10px] font-medium uppercase tracking-widest text-zinc-400">{stat.label}</div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/90">
+            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Coverage</div>
+            <div className="mt-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Unique areas transacted in</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(uniqueAreas)}</span>
               </div>
-            ))}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Property categories (e.g. HDB, Condo)</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(propertyTypes.size)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Deal types (e.g. Resale, Rental)</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(transactionTypes.size)}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
