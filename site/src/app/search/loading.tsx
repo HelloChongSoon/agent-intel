@@ -12,7 +12,7 @@ export default function Loading() {
       <SkeletonBlock className="h-24 w-full max-w-xl mx-auto" />
 
       <SkeletonPanel className="overflow-hidden p-0">
-        <div className="divide-y divide-zinc-900">
+        <div className="divide-y divide-zinc-200 dark:divide-zinc-900">
           {Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="space-y-4 px-5 py-4">
               <div className="flex items-start justify-between gap-4">

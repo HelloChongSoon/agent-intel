@@ -54,12 +54,12 @@ export default function Loading() {
       </section>
 
       <SkeletonPanel className="overflow-hidden p-0">
-        <div className="border-b border-zinc-800 px-6 py-5">
+        <div className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-5">
           <SkeletonBlock className="h-7 w-44" />
           <SkeletonBlock className="mt-3 h-4 w-72" />
           <SkeletonBlock className="mt-5 h-11 w-full" />
         </div>
-        <div className="divide-y divide-zinc-900">
+        <div className="divide-y divide-zinc-200 dark:divide-zinc-900">
           {Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="space-y-3 px-5 py-4">
               <div className="flex justify-between gap-4">

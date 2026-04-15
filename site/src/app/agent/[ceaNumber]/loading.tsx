@@ -27,11 +27,11 @@ export default function Loading() {
       </div>
 
       <SkeletonPanel className="overflow-hidden p-0">
-        <div className="border-b border-zinc-800 px-6 py-5">
+        <div className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-5">
           <SkeletonBlock className="h-7 w-44" />
           <SkeletonBlock className="mt-3 h-4 w-72" />
         </div>
-        <div className="divide-y divide-zinc-900">
+        <div className="divide-y divide-zinc-200 dark:divide-zinc-900">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="space-y-3 px-5 py-4">
               <SkeletonBlock className="h-4 w-20" />
@@ -42,7 +42,7 @@ export default function Loading() {
       </SkeletonPanel>
 
       <SkeletonPanel className="overflow-hidden p-0">
-        <div className="border-b border-zinc-800 px-6 py-5">
+        <div className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-5">
           <SkeletonBlock className="h-7 w-44" />
           <SkeletonBlock className="mt-3 h-4 w-56" />
           <div className="mt-5 grid gap-3 md:grid-cols-5">
@@ -51,7 +51,7 @@ export default function Loading() {
             ))}
           </div>
         </div>
-        <div className="divide-y divide-zinc-900">
+        <div className="divide-y divide-zinc-200 dark:divide-zinc-900">
           {Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="space-y-3 px-5 py-4">
               <div className="flex justify-between gap-4">

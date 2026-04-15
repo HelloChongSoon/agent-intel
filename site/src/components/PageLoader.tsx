@@ -77,7 +77,7 @@ export default function PageLoader() {
   if (!isActive) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm transition-opacity duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-opacity duration-200">
       <div className="flex flex-col items-center gap-4">
         {/* Animated bar chart icon */}
         <div className="flex items-end gap-1.5 h-12">

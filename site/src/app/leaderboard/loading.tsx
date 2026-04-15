@@ -42,13 +42,13 @@ export default function Loading() {
       </section>
 
       <SkeletonPanel className="overflow-hidden p-0">
-        <div className="border-b border-zinc-800 px-6 py-6 md:px-8">
+        <div className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-6 md:px-8">
           <SkeletonBlock className="h-7 w-40" />
           <SkeletonBlock className="mt-3 h-5 w-72" />
         </div>
         <div className="space-y-0">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="grid grid-cols-[88px_minmax(0,1fr)_160px_120px] gap-4 border-b border-zinc-900 px-6 py-5 md:px-8">
+            <div key={index} className="grid grid-cols-[88px_minmax(0,1fr)_160px_120px] gap-4 border-b border-zinc-200 dark:border-zinc-900 px-6 py-5 md:px-8">
               <SkeletonBlock className="h-8 w-14" />
               <SkeletonBlock className="h-8 w-full" />
               <SkeletonBlock className="h-8 w-full" />
