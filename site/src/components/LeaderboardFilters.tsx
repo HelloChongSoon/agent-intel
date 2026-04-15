@@ -4,7 +4,7 @@ import type { AgencyOption } from '@/lib/queries';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import posthog from 'posthog-js';
-import { startNavigationFeedback } from '@/components/RouteLoadingIndicator';
+import { startNavigationFeedback } from '@/components/PageLoader';
 
 interface LeaderboardFiltersProps {
   years: number[];
@@ -77,7 +77,7 @@ function FilterSelect({
           value={value}
           disabled={disabled}
           onChange={onChange ? (event) => onChange(event.target.value) : undefined}
-          className="h-14 w-full appearance-none rounded-2xl border border-zinc-800 bg-zinc-900/90 px-5 pr-12 text-lg font-medium text-zinc-100 outline-none transition focus:border-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-500"
+          className="h-12 w-full appearance-none rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 pr-10 text-sm font-medium text-zinc-100 outline-none transition focus:border-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-500 sm:h-14 sm:px-5 sm:pr-12 sm:text-lg"
         >
           {children}
         </select>
@@ -133,7 +133,7 @@ function AgencyCombobox({
         <button
           type="button"
           onClick={() => setIsOpen((value) => !value)}
-          className="flex h-14 w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/90 px-5 text-left text-lg font-medium text-zinc-100 transition hover:border-zinc-700 focus:border-zinc-600"
+          className="flex h-12 w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 text-left text-sm font-medium text-zinc-100 transition hover:border-zinc-700 focus:border-zinc-600 sm:h-14 sm:px-5 sm:text-lg"
         >
           <span className="truncate pr-4">{selectedAgency || 'All agencies'}</span>
           <SelectChevron />
@@ -240,7 +240,7 @@ export default function LeaderboardFilters({
   }
 
   return (
-    <div className={`grid gap-4 lg:grid-cols-[220px_minmax(0,1.25fr)_1fr_1fr] ${isPending ? 'opacity-80' : ''}`}>
+    <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[220px_minmax(0,1.25fr)_1fr_1fr] ${isPending ? 'opacity-80' : ''}`}>
       <FilterSelect
         label="Year"
         value={String(selectedYear)}

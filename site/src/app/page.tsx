@@ -105,10 +105,10 @@ export default async function Home() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
-        <section className="rounded-[32px] border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black px-8 py-16">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-zinc-500">Singapore Property Intelligence</p>
-          <h1 className="mb-4 max-w-4xl text-4xl font-semibold tracking-tight text-zinc-50 md:text-6xl">PropNext Intel</h1>
-          <p className="max-w-3xl text-xl text-zinc-400">
+        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black px-4 py-10 sm:rounded-[32px] sm:px-8 sm:py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500 sm:mb-4 sm:text-sm">Singapore Property Intelligence</p>
+          <h1 className="mb-3 max-w-4xl text-3xl font-semibold tracking-tight text-zinc-50 sm:mb-4 sm:text-4xl md:text-6xl">PropNext Intel</h1>
+          <p className="max-w-3xl text-base text-zinc-400 sm:text-xl">
             Singapore property agent rankings, profiles, and movement intelligence for consumers who want to compare agents with clearer data.
           </p>
           <div className="mt-5 max-w-3xl text-sm text-zinc-500">

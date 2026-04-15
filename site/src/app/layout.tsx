@@ -3,7 +3,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl, getRequestSiteContext } from '@/lib/site';
-import RouteLoadingIndicator from '@/components/RouteLoadingIndicator';
+import PageLoader from '@/components/PageLoader';
+import MobileNav from '@/components/MobileNav';
+import ThemeToggle from '@/components/ThemeToggle';
 import WebVitals from '@/components/WebVitals';
 import PostHogProvider from '@/components/PostHogProvider';
 import "./globals.css";
@@ -59,21 +61,25 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <PostHogProvider />
-        <RouteLoadingIndicator />
+        <PageLoader />
         <WebVitals />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
         <nav className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <Link href="/" className="text-xl font-semibold tracking-tight text-zinc-50">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
+            <Link href="/" className="text-lg font-semibold tracking-tight text-zinc-50 sm:text-xl">
               {context.isIntel ? 'PropNext Intel' : 'PropNext'}
             </Link>
-            <div className="flex items-center gap-6 text-sm font-medium text-zinc-400">
+            {/* Desktop nav */}
+            <div className="hidden items-center gap-6 text-sm font-medium text-zinc-400 md:flex">
               {context.isIntel ? (
                 <>
                   <Link href="/leaderboard" className="transition hover:text-zinc-100">Leaderboard</Link>
@@ -89,7 +95,20 @@ export default async function RootLayout({
                   <Link href="/contact" className="transition hover:text-zinc-100">Contact</Link>
                 </>
               )}
+              <ThemeToggle />
             </div>
+            {/* Mobile nav */}
+            <MobileNav links={context.isIntel ? [
+              { href: '/leaderboard', label: 'Leaderboard' },
+              { href: '/movements', label: 'Movements' },
+              { href: '/guides/how-to-choose-a-property-agent-in-singapore', label: 'Guides' },
+              { href: '/methodology', label: 'Methodology' },
+            ] : [
+              { href: '/about', label: 'About' },
+              { href: '/products/intel', label: 'PropNext Intel' },
+              { href: '/methodology', label: 'Methodology' },
+              { href: '/contact', label: 'Contact' },
+            ]} />
           </div>
         </nav>
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

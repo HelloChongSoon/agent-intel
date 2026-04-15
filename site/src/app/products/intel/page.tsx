@@ -29,7 +29,7 @@ export default async function ProductIntelPage() {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Products' }, { label: 'PropNext Intel' }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Product</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">PropNext Intel</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">PropNext Intel</h1>
         <p className="mt-4 text-lg text-zinc-400">
           The first PropNext product is built to help Singapore consumers evaluate agent activity, specialization, and market movement with clearer public-data summaries.
         </p>

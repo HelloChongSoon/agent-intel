@@ -47,7 +47,7 @@ export default async function TransactionTypePage({ params }: Props) {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Leaderboard', href: '/leaderboard' }, { label }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Deal Type</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Top {label} agents in Singapore</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">Top {label} agents in Singapore</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
           Use this page to compare agents based on the deal type you actually need, such as resale, rental, or new sale activity.
         </p>

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
-import { startNavigationFeedback } from '@/components/RouteLoadingIndicator';
+import { startNavigationFeedback } from '@/components/PageLoader';
 
 interface MovementsSearchFormProps {
   defaultValue: string;

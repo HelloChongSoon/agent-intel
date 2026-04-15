@@ -26,7 +26,7 @@ export default async function DataSourcesPage() {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Data Sources' }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Data Sources</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Where the information comes from</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">Where the information comes from</h1>
         <p className="mt-4 text-lg text-zinc-400">
           PropNext Intel surfaces public market information in a structured way. The product is transparent about which fields come from official records and which are assembled through scraping and enrichment.
         </p>

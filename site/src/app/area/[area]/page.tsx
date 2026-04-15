@@ -50,7 +50,7 @@ export default async function AreaPage({ params }: Props) {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Leaderboard', href: '/leaderboard' }, { label: area }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Area</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Top agents in {area}</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">Top agents in {area}</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
           Agents ranked by transaction volume in {area}. Use this page to compare agents who are most active in this specific location.
         </p>

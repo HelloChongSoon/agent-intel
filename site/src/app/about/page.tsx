@@ -27,7 +27,7 @@ export default async function AboutPage() {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">About</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">PropNext</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">PropNext</h1>
         <p className="mt-4 text-lg text-zinc-400">
           PropNext is building Singapore property intelligence products that help consumers make better decisions with clearer, more structured public data.
         </p>

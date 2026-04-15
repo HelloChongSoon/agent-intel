@@ -7,7 +7,7 @@ import RevealContact from '@/components/RevealContact';
 import Pagination from '@/components/Pagination';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { slugifySegment } from '@/lib/format';
+import { formatLabel, slugifySegment } from '@/lib/format';
 
 interface Props {
   params: Promise<{ ceaNumber: string }>;
@@ -128,15 +128,6 @@ function formatDateLabel(value: string | null | undefined): string {
   return value;
 }
 
-function formatLabel(value: string | null | undefined): string {
-  if (!value) return '—';
-
-  return value
-    .split('_')
-    .filter(Boolean)
-    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
-    .join(' ');
-}
 
 function getTransactionSortKey(value: string): number {
   const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
@@ -432,28 +423,28 @@ export default async function AgentPage({ params, searchParams }: Props) {
         </div>
       </section>
 
-      <div className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950/90">
-        <div className="border-b border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black px-6 py-7">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+      <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/90 sm:rounded-[28px]">
+        <div className="border-b border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black px-4 py-5 sm:px-6 sm:py-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <div className="text-xs uppercase tracking-[0.22em] text-zinc-500">Agent Profile</div>
-              <h1 className="mt-3 max-w-4xl text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50 sm:mt-3 sm:text-3xl md:text-4xl">
                 {agent.name}
               </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
-                <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-400 sm:mt-3 sm:text-sm">
+                <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-2.5 py-0.5 sm:px-3 sm:py-1">
                   CEA {ceaNumber}
                 </span>
-                <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1">
+                <span className="truncate rounded-full border border-zinc-700 bg-zinc-900/80 px-2.5 py-0.5 sm:px-3 sm:py-1">
                   {agent.agency || 'Independent'}
                 </span>
               </div>
             </div>
 
-            <div className="grid min-w-[220px] gap-3 text-right">
+            <div className="grid grid-cols-2 gap-3 sm:min-w-[220px] sm:grid-cols-1 sm:text-right">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Verified Transactions</div>
-                <div className="mt-1 text-3xl font-semibold text-zinc-50">{formatCount(totalTransactions)}</div>
+                <div className="mt-1 text-2xl font-semibold text-zinc-50 sm:text-3xl">{formatCount(totalTransactions)}</div>
               </div>
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Latest Activity</div>
@@ -463,7 +454,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 px-6 py-6 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:gap-4 sm:px-6 sm:py-6 md:grid-cols-4">
           <div>
             <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Agency</div>
             <div className="mt-1 text-sm font-medium text-zinc-100">{agent.agency || '—'}</div>

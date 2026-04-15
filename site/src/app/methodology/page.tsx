@@ -27,7 +27,7 @@ export default async function MethodologyPage() {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Methodology' }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Methodology</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">How PropNext Intel calculates and presents data</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">How PropNext Intel calculates and presents data</h1>
         <p className="mt-4 text-lg text-zinc-400">
           PropNext Intel groups public records into consumer-friendly views such as leaderboards, activity snapshots, movement timelines, and profile summaries.
         </p>

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import posthog from 'posthog-js';
-import { startNavigationFeedback } from '@/components/RouteLoadingIndicator';
+import { startNavigationFeedback } from '@/components/PageLoader';
 
 export default function SearchBar() {
   const [query, setQuery] = useState('');

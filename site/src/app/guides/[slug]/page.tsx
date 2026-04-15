@@ -54,7 +54,7 @@ export default async function GuidePage({ params }: Props) {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Guides', href: '/guides/how-to-choose-a-property-agent-in-singapore' }, { label: guide.title }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Guide</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">{guide.title}</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">{guide.title}</h1>
         <p className="mt-4 text-lg text-zinc-400">{guide.description}</p>
       </div>
 

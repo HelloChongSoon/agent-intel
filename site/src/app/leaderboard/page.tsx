@@ -116,16 +116,16 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
-      <div className="mb-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] xl:items-start">
+      <div className="mb-8 grid gap-6 xl:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] xl:items-start">
         <div className="max-w-2xl pt-1">
           <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Leaderboard' }]} />
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
               Agent Leaderboard
           </h1>
-          <p className="mt-2 text-lg text-zinc-400">
+          <p className="mt-2 text-base text-zinc-400 sm:text-lg">
             Top agents by transaction volume in Singapore
           </p>
-          <p className="mt-4 text-sm leading-7 text-zinc-500">
+          <p className="mt-3 text-sm leading-7 text-zinc-500 sm:mt-4">
             Start here for broad discovery, then switch to agency, property-type, or deal-type pages when you want a more relevant comparison.
           </p>
         </div>
@@ -197,46 +197,77 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] table-fixed">
+        {/* Desktop table */}
+        <div className="hidden md:block">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="border-b border-zinc-800 text-left">
-                <th className="w-28 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 md:px-8">Rank</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 md:px-8">Name</th>
+                <th className="w-28 px-8 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Rank</th>
+                <th className="px-8 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Name</th>
                 <th className="w-64 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Agency</th>
-                <th className="w-40 px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 md:px-8">Transactions</th>
+                <th className="w-40 px-8 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Transactions</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((agent) => (
                 <tr key={agent.cea_number} className="border-b border-zinc-900/80 transition hover:bg-zinc-900/70">
-                  <td className="px-6 py-4 md:px-8">
+                  <td className="px-8 py-4">
                     <div className="flex items-center gap-3 text-xl font-semibold text-white">
                       <TrophyIcon rank={agent.rank} />
                       <span>{agent.rank}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 md:px-8">
+                  <td className="px-8 py-4">
                     <LeaderboardAgentLink ceaNumber={agent.cea_number} name={agent.name} agency={agent.agency} rank={agent.rank} />
                     <div className="mt-1 text-sm text-zinc-500">{agent.cea_number}</div>
                   </td>
                   <td className="px-6 py-4 text-base text-zinc-400">
                     {agent.agency || 'Independent'}
                   </td>
-                  <td className="px-6 py-4 text-right text-xl font-semibold text-white md:px-8">
+                  <td className="px-8 py-4 text-right text-xl font-semibold text-white">
                     {agent.transactions}
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-16 text-center text-base text-zinc-500 md:px-8">
+                  <td colSpan={4} className="px-8 py-16 text-center text-base text-zinc-500">
                     No agents found for this filter set.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile card list */}
+        <div className="divide-y divide-zinc-900 md:hidden">
+          {rows.map((agent) => (
+            <div key={agent.cea_number} className="px-5 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <TrophyIcon rank={agent.rank} />
+                    <span className="text-base font-semibold text-white">#{agent.rank}</span>
+                  </div>
+                  <div className="mt-2">
+                    <LeaderboardAgentLink ceaNumber={agent.cea_number} name={agent.name} agency={agent.agency} rank={agent.rank} />
+                  </div>
+                  <div className="mt-1 text-xs text-zinc-500">{agent.cea_number}</div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className="text-lg font-semibold text-white">{agent.transactions}</div>
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">Txns</div>
+                </div>
+              </div>
+              <div className="mt-2 text-sm text-zinc-400">{agent.agency || 'Independent'}</div>
+            </div>
+          ))}
+          {rows.length === 0 && (
+            <div className="px-5 py-16 text-center text-base text-zinc-500">
+              No agents found for this filter set.
+            </div>
+          )}
         </div>
 
         <div className="px-6 pb-8 pt-6 md:px-8">

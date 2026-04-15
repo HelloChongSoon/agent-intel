@@ -2,13 +2,18 @@ export function formatCount(value: number): string {
   return value.toLocaleString('en-SG');
 }
 
+const UPPERCASE_WORDS = new Set(['hdb', 'ec', 'dbss', 'cea', 'cbd', 'mrt', 'cck', 'ntu', 'nus', 'smu']);
+
 export function formatLabel(value: string | null | undefined): string {
   if (!value) return '—';
 
   return value
     .split(/[_\s-]+/)
     .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .map((part) => {
+      if (UPPERCASE_WORDS.has(part.toLowerCase())) return part.toUpperCase();
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
     .join(' ');
 }
 

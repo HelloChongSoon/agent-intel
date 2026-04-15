@@ -120,7 +120,7 @@ export default async function MovementsPage({ searchParams }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Movements' }]} />
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">Agent Movements</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">Agent Movements</h1>
           <p className="mt-2 text-lg text-zinc-400">
             {formatCompactNumber(insights.totalMovements)} movements tracked
             {type && <span> — filtered by {TYPE_LABELS[type] || type}</span>}

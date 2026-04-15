@@ -50,7 +50,7 @@ export default async function AgencyLeaderboardPage({ params, searchParams }: Pr
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Agencies', href: '/leaderboard' }, { label: agency.name, href: `/agency/${slug}` }, { label: 'Leaderboard' }]} />
         <Link href={`/agency/${slug}`} className="text-sm text-zinc-400 transition hover:text-zinc-100">&larr; Back to agency overview</Link>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">{agency.name} leaderboard</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">{agency.name} leaderboard</h1>
         <p className="mt-4 text-lg text-zinc-400">Top visible agents within {agency.name} for {year}.</p>
       </div>
 

@@ -56,7 +56,7 @@ export default async function AgencyAreaPage({ params }: Props) {
           { label: area },
         ]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">{agency.name} &middot; {area}</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">{agency.name} agents in {area}</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">{agency.name} agents in {area}</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
           {agency.name} agents ranked by transaction volume in {area}, showing who has the most local experience within this agency.
         </p>

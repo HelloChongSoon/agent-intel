@@ -61,7 +61,7 @@ export default async function AreaPropertyTypePage({ params }: Props) {
           { label: typeLabel },
         ]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">{area} &middot; {typeLabel}</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Top {typeLabel.toLowerCase()} agents in {area}</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">Top {typeLabel.toLowerCase()} agents in {area}</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
           Agents ranked by {typeLabel.toLowerCase()} transaction volume in {area}, narrowing down to the most relevant specialists.
         </p>

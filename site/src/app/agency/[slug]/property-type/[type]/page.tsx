@@ -59,7 +59,7 @@ export default async function AgencyPropertyTypePage({ params }: Props) {
           { label: typeLabel },
         ]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">{agency.name} &middot; {typeLabel}</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">{agency.name} top {typeLabel.toLowerCase()} agents</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">{agency.name} top {typeLabel.toLowerCase()} agents</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
           {agency.name} agents ranked by {typeLabel.toLowerCase()} transaction volume, showing who specialises in this property segment.
         </p>

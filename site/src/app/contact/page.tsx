@@ -26,7 +26,7 @@ export default async function ContactPage() {
       <div>
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Contact</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-50">Get in touch</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">Get in touch</h1>
         <p className="mt-4 text-lg text-zinc-400">
           Use this page for product feedback, data correction requests, and conversations about partnerships or future product collaboration.
         </p>
