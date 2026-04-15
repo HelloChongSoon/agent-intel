@@ -115,15 +115,34 @@ export default async function RootLayout({
           {children}
         </main>
         <footer className="border-t border-zinc-800/80 bg-zinc-950/85">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-zinc-400 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="font-medium text-zinc-100">{context.isIntel ? 'PropNext Intel' : 'PropNext'}</div>
-              <div className="mt-1">Singapore property agent rankings, profiles, and movement intelligence.</div>
+          <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-zinc-400 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="font-medium text-zinc-100">{context.isIntel ? 'PropNext Intel' : 'PropNext'}</div>
+                <div className="mt-1">Singapore property agent rankings, profiles, and movement intelligence.</div>
+                {context.isIntel && (
+                  <div className="mt-2">
+                    <a href="https://propnext.sg" className="text-zinc-500 transition hover:text-zinc-100">propnext.sg</a>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-4 sm:flex-row sm:gap-8">
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Platform</span>
+                  <Link href="/methodology" className="transition hover:text-zinc-100">Methodology</Link>
+                  <Link href="/data-sources" className="transition hover:text-zinc-100">Data Sources</Link>
+                  <Link href="/contact" className="transition hover:text-zinc-100">Contact</Link>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Legal</span>
+                  <Link href="/privacy-policy" className="transition hover:text-zinc-100">Privacy Policy</Link>
+                  <Link href="/terms-of-use" className="transition hover:text-zinc-100">Terms of Use</Link>
+                  <Link href="/disclaimer" className="transition hover:text-zinc-100">Disclaimer</Link>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-4">
-              <Link href="/methodology" className="transition hover:text-zinc-100">Methodology</Link>
-              <Link href="/data-sources" className="transition hover:text-zinc-100">Data Sources</Link>
-              <Link href="/contact" className="transition hover:text-zinc-100">Contact</Link>
+            <div className="mt-8 border-t border-zinc-800/60 pt-4 text-xs text-zinc-500">
+              &copy; {new Date().getFullYear()} PropNext. All rights reserved.
             </div>
           </div>
         </footer>

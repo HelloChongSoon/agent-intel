@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   const paths = variant === 'root'
     ? ['/', '/about', '/contact', '/methodology', '/products/intel']
-    : ['/', '/leaderboard', '/movements', '/search', '/methodology', '/data-sources', '/contact'];
+    : ['/', '/leaderboard', '/movements', '/search', '/methodology', '/data-sources', '/contact', '/privacy-policy', '/terms-of-use', '/disclaimer'];
 
   return xmlResponse(buildUrlSet(paths.map((path) => ({
     loc: `${siteUrl}${path}`,
