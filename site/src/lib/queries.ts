@@ -228,6 +228,22 @@ export interface SearchAgentResult {
   latest_activity: string | null;
 }
 
+const DEFAULT_LEADERBOARD_PROPERTY_TYPES = [
+  'CONDOMINIUM_APARTMENTS',
+  'EXECUTIVE_CONDOMINIUM',
+  'HDB',
+  'LANDED',
+  'STRATA_LANDED',
+];
+
+const DEFAULT_LEADERBOARD_TRANSACTION_TYPES = [
+  'NEW SALE',
+  'RESALE',
+  'ROOM RENTAL',
+  'SUB-SALE',
+  'WHOLE RENTAL',
+];
+
 const getCachedAvailableLeaderboardYears = unstable_cache(
   async () => {
     const currentYear = new Date().getFullYear();
@@ -279,7 +295,10 @@ const getCachedLeaderboardFilterOptions = unstable_cache(
     const supabase = getSupabase();
 
     if (!supabase) {
-      return { propertyTypes: [], transactionTypes: [] };
+      return {
+        propertyTypes: DEFAULT_LEADERBOARD_PROPERTY_TYPES,
+        transactionTypes: DEFAULT_LEADERBOARD_TRANSACTION_TYPES,
+      };
     }
 
     const [propertyTypesResult, transactionTypesResult] = await Promise.all([
@@ -305,7 +324,10 @@ const getCachedLeaderboardFilterOptions = unstable_cache(
       .filter((value): value is string => Boolean(value))
       .sort((a, b) => a.localeCompare(b));
 
-    return { propertyTypes, transactionTypes };
+    return {
+      propertyTypes: propertyTypes.length > 0 ? propertyTypes : DEFAULT_LEADERBOARD_PROPERTY_TYPES,
+      transactionTypes: transactionTypes.length > 0 ? transactionTypes : DEFAULT_LEADERBOARD_TRANSACTION_TYPES,
+    };
   },
   ['leaderboard-filter-options'],
   { revalidate: 600 }

@@ -218,6 +218,14 @@ export default function LeaderboardFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const showPropertyTypeFilter = propertyTypes.length > 1;
+  const showTransactionTypeFilter = transactionTypes.length > 1;
+  const gridClassName = [
+    'grid gap-3 sm:gap-4',
+    showPropertyTypeFilter && showTransactionTypeFilter
+      ? 'grid-cols-2 lg:grid-cols-[220px_minmax(0,1.25fr)_1fr_1fr]'
+      : 'grid-cols-1 md:grid-cols-2',
+  ].join(' ');
 
   function updateParams(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -240,7 +248,7 @@ export default function LeaderboardFilters({
   }
 
   return (
-    <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[220px_minmax(0,1.25fr)_1fr_1fr] ${isPending ? 'opacity-80' : ''}`}>
+    <div className={`${gridClassName} ${isPending ? 'opacity-80' : ''}`}>
       <FilterSelect
         label="Year"
         value={String(selectedYear)}
@@ -265,37 +273,41 @@ export default function LeaderboardFilters({
         }}
       />
 
-      <FilterSelect
-        label="Property Type"
-        value={selectedPropertyType || ''}
-        onChange={(value) => {
-          posthog.capture('leaderboard_filter_applied', { filter: 'property_type', value: value || null });
-          updateParams({ propertyType: value || undefined });
-        }}
-      >
-        <option value="">All types</option>
-        {propertyTypes.map((propertyType) => (
-          <option key={propertyType} value={propertyType}>
-            {formatFilterLabel(propertyType)}
-          </option>
-        ))}
-      </FilterSelect>
+      {showPropertyTypeFilter && (
+        <FilterSelect
+          label="Property Type"
+          value={selectedPropertyType || ''}
+          onChange={(value) => {
+            posthog.capture('leaderboard_filter_applied', { filter: 'property_type', value: value || null });
+            updateParams({ propertyType: value || undefined });
+          }}
+        >
+          <option value="">All types</option>
+          {propertyTypes.map((propertyType) => (
+            <option key={propertyType} value={propertyType}>
+              {formatFilterLabel(propertyType)}
+            </option>
+          ))}
+        </FilterSelect>
+      )}
 
-      <FilterSelect
-        label="Transaction Type"
-        value={selectedTransactionType || ''}
-        onChange={(value) => {
-          posthog.capture('leaderboard_filter_applied', { filter: 'transaction_type', value: value || null });
-          updateParams({ transactionType: value || undefined });
-        }}
-      >
-        <option value="">All types</option>
-        {transactionTypes.map((transactionType) => (
-          <option key={transactionType} value={transactionType}>
-            {formatFilterLabel(transactionType)}
-          </option>
-        ))}
-      </FilterSelect>
+      {showTransactionTypeFilter && (
+        <FilterSelect
+          label="Transaction Type"
+          value={selectedTransactionType || ''}
+          onChange={(value) => {
+            posthog.capture('leaderboard_filter_applied', { filter: 'transaction_type', value: value || null });
+            updateParams({ transactionType: value || undefined });
+          }}
+        >
+          <option value="">All types</option>
+          {transactionTypes.map((transactionType) => (
+            <option key={transactionType} value={transactionType}>
+              {formatFilterLabel(transactionType)}
+            </option>
+          ))}
+        </FilterSelect>
+      )}
     </div>
   );
 }
