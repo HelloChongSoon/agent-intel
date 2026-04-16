@@ -247,8 +247,11 @@ export default function LeaderboardFilters({
     });
   }
 
+  const hasActiveFilters = !!(selectedAgency || selectedPropertyType || selectedTransactionType);
+
   return (
-    <div className={`${gridClassName} ${isPending ? 'opacity-80' : ''}`}>
+    <div className={`space-y-3 ${isPending ? 'opacity-80' : ''}`}>
+    <div className={gridClassName}>
       <FilterSelect
         label="Year"
         value={String(selectedYear)}
@@ -308,6 +311,25 @@ export default function LeaderboardFilters({
           ))}
         </FilterSelect>
       )}
+    </div>
+    {hasActiveFilters && (
+      <button
+        type="button"
+        onClick={() => {
+          posthog.capture('leaderboard_filter_reset');
+          startTransition(() => {
+            startNavigationFeedback();
+            router.push(`/leaderboard?year=${selectedYear}`);
+          });
+        }}
+        className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 text-xs font-medium text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200"
+      >
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M4 4l8 8M12 4l-8 8" />
+        </svg>
+        Reset all filters
+      </button>
+    )}
     </div>
   );
 }
