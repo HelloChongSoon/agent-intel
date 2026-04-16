@@ -77,7 +77,7 @@ function FilterSelect({
           value={value}
           disabled={disabled}
           onChange={onChange ? (event) => onChange(event.target.value) : undefined}
-          className="h-12 w-full appearance-none rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 pr-10 text-sm font-medium text-zinc-100 outline-none transition focus:border-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-500 sm:h-14 sm:px-5 sm:pr-12 sm:text-lg"
+          className="h-12 w-full appearance-none rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 pr-10 text-sm font-medium text-zinc-100 outline-none transition focus:border-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-500 sm:h-14 sm:px-5 sm:pr-12"
         >
           {children}
         </select>
@@ -133,7 +133,7 @@ function AgencyCombobox({
         <button
           type="button"
           onClick={() => setIsOpen((value) => !value)}
-          className="flex h-12 w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 text-left text-sm font-medium text-zinc-100 transition hover:border-zinc-700 focus:border-zinc-600 sm:h-14 sm:px-5 sm:text-lg"
+          className="flex h-12 w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 text-left text-sm font-medium text-zinc-100 transition hover:border-zinc-700 focus:border-zinc-600 sm:h-14 sm:px-5"
         >
           <span className="truncate pr-4">{selectedAgency || 'All agencies'}</span>
           <SelectChevron />
@@ -223,7 +223,7 @@ export default function LeaderboardFilters({
   const gridClassName = [
     'grid gap-3 sm:gap-4',
     showPropertyTypeFilter && showTransactionTypeFilter
-      ? 'grid-cols-2 lg:grid-cols-[220px_minmax(0,1.25fr)_1fr_1fr]'
+      ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4'
       : 'grid-cols-1 md:grid-cols-2',
   ].join(' ');
 
