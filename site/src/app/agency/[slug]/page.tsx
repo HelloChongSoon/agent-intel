@@ -103,15 +103,22 @@ export default async function AgencyPage({ params }: Props) {
       </section>
 
       <section className="rounded-[28px] border border-zinc-800 bg-zinc-950/90 p-7">
-        <h2 className="text-xl font-semibold text-zinc-100">Latest activity</h2>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {summary.recentMovements.map((movement) => (
-            <Link key={movement.id} href={`/agent/${movement.cea_number}`} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-zinc-700">
-              <div className="text-sm font-medium text-zinc-100">{movement.agent_name}</div>
-              <div className="mt-1 text-xs text-zinc-500">{formatLabel(movement.type)} · {formatDateLabel(movement.date)}</div>
-            </Link>
-          ))}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-zinc-100">Latest activity</h2>
+          <Link href={`/movements?agency=${encodeURIComponent(summary.agency.name)}`} className="text-sm text-zinc-400 transition hover:text-zinc-100">View all &rarr;</Link>
         </div>
+        {summary.recentMovements.length > 0 ? (
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {summary.recentMovements.map((movement) => (
+              <Link key={movement.id} href={`/agent/${movement.cea_number}`} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-zinc-700">
+                <div className="text-sm font-medium text-zinc-100">{movement.agent_name}</div>
+                <div className="mt-1 text-xs text-zinc-500">{formatLabel(movement.type)} · {formatDateLabel(movement.date)}</div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-5 text-sm text-zinc-500">No recent movement activity recorded for this agency.</p>
+        )}
       </section>
     </div>
   );
