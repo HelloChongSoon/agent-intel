@@ -220,6 +220,14 @@ export interface AgentTransactionPageResult {
   total: number;
 }
 
+export interface SearchAgentResult {
+  cea_number: string;
+  name: string;
+  agency: string | null;
+  total_transactions: number;
+  latest_activity: string | null;
+}
+
 const getCachedAvailableLeaderboardYears = unstable_cache(
   async () => {
     const currentYear = new Date().getFullYear();
@@ -587,46 +595,6 @@ export async function getAgentTransactionsPage(params: {
   };
 }
 
-export async function getAgentTransactionSummaries(
-  ceaNumbers: string[]
-): Promise<Record<string, { count: number; latest: string | null }>> {
-  const dedupedCeaNumbers = [...new Set(ceaNumbers.filter(Boolean))];
-  if (dedupedCeaNumbers.length === 0) return {};
-
-  const supabase = getSupabase();
-  if (!supabase) return {};
-
-  const { data, error } = await supabase.rpc('get_agent_search_summaries', {
-    cea_numbers: dedupedCeaNumbers,
-  });
-
-  if (error) {
-    console.error('getAgentTransactionSummaries failed:', error.message);
-    return {};
-  }
-
-  return Object.fromEntries(
-    ((data || []) as Array<Record<string, unknown>>)
-      .map((row) => {
-        const ceaNumber = extractRpcScalar<string>(row, 'cea_number');
-        if (!ceaNumber) return null;
-
-        return [
-          ceaNumber,
-          {
-            count: Number(extractRpcScalar<number | string>(row, 'total_transactions') || 0),
-            latest: extractRpcScalar<string>(row, 'latest_activity'),
-          },
-        ] as const;
-      })
-      .filter(
-        (
-          entry
-        ): entry is readonly [string, { count: number; latest: string | null }] => Boolean(entry)
-      )
-  );
-}
-
 export interface MovementRow {
   id: number;
   cea_number: string;
@@ -653,47 +621,48 @@ export interface MovementInsights {
   }>;
 }
 
+export interface MovementPageResult {
+  rows: MovementRow[];
+  total: number;
+  hasMore: boolean;
+}
+
 export async function getMovements(params: {
   page?: number;
   pageSize?: number;
   type?: string;
   query?: string;
   includeCount?: boolean;
-}): Promise<{ rows: MovementRow[]; total: number }> {
+}): Promise<MovementPageResult> {
   const supabase = getSupabase();
-  if (!supabase) return { rows: [], total: 0 };
+  if (!supabase) return { rows: [], total: 0, hasMore: false };
   const page = params.page || 1;
   const pageSize = params.pageSize || 20;
   const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  let query = supabase
-    .from('movements')
-    .select('*', params.includeCount === false ? undefined : { count: 'exact' });
-
-  if (params.type) {
-    query = query.eq('type', params.type);
-  }
-
-  if (params.query) {
-    const searchValue = params.query.replace(/[%_]/g, '').trim();
-    if (searchValue) {
-      query = query.or(`agent_name.ilike.%${searchValue}%,cea_number.ilike.%${searchValue}%`);
-    }
-  }
-
-  const { data, count, error } = await query
-    .order('date', { ascending: false })
-    .range(from, to);
+  const { data, error } = await supabase.rpc('get_movements_page', {
+    type_filter: params.type || null,
+    search_query: params.query?.trim() || null,
+    page_num: page,
+    page_size: pageSize,
+  });
 
   if (error) {
     console.error('getMovements failed:', error.message);
-    return { rows: [], total: 0 };
+    return { rows: [], total: 0, hasMore: false };
   }
 
+  const fetchedRows = (data || []) as Array<MovementRow & { has_more?: boolean }>;
+  const hasMore = fetchedRows.length > 0 ? Boolean(fetchedRows[0].has_more) : false;
+  const rows = fetchedRows.map((row) => {
+    const normalizedRow = { ...row };
+    delete (normalizedRow as MovementRow & { has_more?: boolean }).has_more;
+    return normalizedRow as MovementRow;
+  });
+
   return {
-    rows: (data || []) as MovementRow[],
-    total: params.includeCount === false ? 0 : count || 0,
+    rows,
+    total: params.includeCount === false ? 0 : from + rows.length + (hasMore ? 1 : 0),
+    hasMore,
   };
 }
 
@@ -778,21 +747,37 @@ export async function getAgentMovements(ceaNumber: string, limit: number = 10): 
   return (data || []) as MovementRow[];
 }
 
-export async function searchAgents(query: string, limit: number = 50): Promise<AgentRow[]> {
+export async function searchAgents(query: string, limit: number = 50): Promise<SearchAgentResult[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
-  // Use trigram similarity for fuzzy search on name, exact match on CEA number
-  const { data, error } = await supabase
-    .from('agents')
-    .select('*')
-    .or(`name.ilike.%${query}%,cea_number.ilike.%${query}%`)
-    .limit(limit);
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return [];
+
+  const { data, error } = await supabase.rpc('search_agents_with_summaries', {
+    query_text: trimmedQuery,
+    result_limit: limit,
+  });
 
   if (error) {
     console.error('searchAgents failed:', error.message);
     return [];
   }
-  return (data || []) as AgentRow[];
+
+  return ((data || []) as Array<Record<string, unknown>>)
+    .map((row) => {
+      const ceaNumber = extractRpcScalar<string>(row, 'cea_number');
+      const name = extractRpcScalar<string>(row, 'name');
+      if (!ceaNumber || !name) return null;
+
+      return {
+        cea_number: ceaNumber,
+        name,
+        agency: extractRpcScalar<string>(row, 'agency'),
+        total_transactions: Number(extractRpcScalar<number | string>(row, 'total_transactions') || 0),
+        latest_activity: extractRpcScalar<string>(row, 'latest_activity'),
+      };
+    })
+    .filter((value): value is SearchAgentResult => Boolean(value));
 }
 
 const getCachedAgencies = unstable_cache(
@@ -849,41 +834,29 @@ export async function getAgencyBySlug(slug: string): Promise<AgencyOption | null
   return agencies.find((agency) => slugifySegment(agency.name) === slug) || null;
 }
 
+const getCachedAgencyMovements = unstable_cache(
+  async (agency: string, limit: number): Promise<MovementRow[]> => {
+    const supabase = getSupabase();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase.rpc('get_agency_movements', {
+      agency_filter: agency,
+      result_limit: limit,
+    });
+
+    if (error) {
+      console.error('getAgencyMovements failed:', error.message);
+      return [];
+    }
+
+    return (data || []) as MovementRow[];
+  },
+  ['agency-movements'],
+  { revalidate: 600 }
+);
+
 export async function getAgencyMovements(agency: string, limit: number = 10): Promise<MovementRow[]> {
-  const supabase = getSupabase();
-  if (!supabase) return [];
-
-  const [previousAgencyResult, newAgencyResult] = await Promise.all([
-    supabase
-      .from('movements')
-      .select('*')
-      .eq('previous_agency', agency)
-      .order('date', { ascending: false })
-      .limit(limit),
-    supabase
-      .from('movements')
-      .select('*')
-      .eq('new_agency', agency)
-      .order('date', { ascending: false })
-      .limit(limit),
-  ]);
-
-  if (previousAgencyResult.error) {
-    console.error('getAgencyMovements previous agency failed:', previousAgencyResult.error.message);
-  }
-
-  if (newAgencyResult.error) {
-    console.error('getAgencyMovements new agency failed:', newAgencyResult.error.message);
-  }
-
-  const deduped = new Map<number, MovementRow>();
-  for (const row of [...(previousAgencyResult.data || []), ...(newAgencyResult.data || [])] as MovementRow[]) {
-    deduped.set(row.id, row);
-  }
-
-  return [...deduped.values()]
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-    .slice(0, limit);
+  return getCachedAgencyMovements(agency, limit);
 }
 
 const getCachedAgencyPropertyMix = unstable_cache(

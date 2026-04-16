@@ -1,4 +1,4 @@
-import { getAgentTransactionSummaries, searchAgents } from '@/lib/queries';
+import { searchAgents } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -21,9 +21,6 @@ export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const query = params.q || '';
   const results = query ? await searchAgents(query, 50) : [];
-  const transactionSummaries = results.length
-    ? await getAgentTransactionSummaries(results.map((agent) => agent.cea_number))
-    : {};
   const homeUrl = await getRequestAbsoluteUrl('/');
   const searchUrl = await getRequestAbsoluteUrl('/search');
   const url = await getRequestAbsoluteUrl(`/search${query ? `?q=${encodeURIComponent(query)}` : ''}`);
@@ -100,7 +97,7 @@ export default async function SearchPage({ searchParams }: Props) {
                       <td className="px-6 py-4 text-sm text-zinc-500">{agent.cea_number}</td>
                       <td className="px-6 py-4 text-sm text-zinc-400">{agent.agency || '—'}</td>
                       <td className="px-6 py-4 text-right text-sm font-medium text-zinc-100">
-                        {transactionSummaries[agent.cea_number]?.count ?? agent.total_transactions}
+                        {agent.total_transactions}
                       </td>
                     </tr>
                   ))}
@@ -120,7 +117,7 @@ export default async function SearchPage({ searchParams }: Props) {
                   <div className="text-right">
                     <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">Transactions</div>
                     <div className="mt-1 text-base font-semibold text-zinc-100">
-                      {transactionSummaries[agent.cea_number]?.count ?? agent.total_transactions}
+                      {agent.total_transactions}
                     </div>
                   </div>
                 </div>

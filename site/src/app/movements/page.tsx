@@ -4,7 +4,6 @@ import { createPageMetadata } from '@/lib/seo';
 import { formatDateLabel, formatLabel, slugifySegment } from '@/lib/format';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import Pagination from '@/components/Pagination';
 import MovementsSearchForm from '@/components/MovementsSearchForm';
 import MovementsTypeFilters from '@/components/MovementsTypeFilters';
 
@@ -68,11 +67,10 @@ export default async function MovementsPage({ searchParams }: Props) {
   const searchQuery = params.q?.trim() || '';
   const pageSize = 20;
 
-  const [{ rows, total }, insights] = await Promise.all([
+  const [{ rows, hasMore }, insights] = await Promise.all([
     getMovements({ page, pageSize, type, query: searchQuery }),
     getMovementInsights(),
   ]);
-  const totalPages = Math.ceil(total / pageSize);
 
   const filterParams: Record<string, string> = {};
   if (type) filterParams.type = type;
@@ -296,7 +294,8 @@ export default async function MovementsPage({ searchParams }: Props) {
               <p className="mt-1 text-sm text-zinc-500">Search by salesperson name or registration number.</p>
             </div>
             <div className="text-sm text-zinc-400">
-              Showing {rows.length === 0 ? 0 : ((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, total)} of {formatCompactNumber(total)} movements
+              Showing {rows.length === 0 ? 0 : ((page - 1) * pageSize) + 1} to {((page - 1) * pageSize) + rows.length}
+              {hasMore ? ' of many movements' : ' movements'}
             </div>
           </div>
           <MovementsSearchForm defaultValue={searchQuery} movementType={type} />
@@ -414,7 +413,25 @@ export default async function MovementsPage({ searchParams }: Props) {
         </div>
       </section>
 
-      <Pagination currentPage={page} totalPages={totalPages} basePath="/movements" searchParams={filterParams} />
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {page > 1 && (
+          <Link
+            href={`/movements?${new URLSearchParams({ ...filterParams, page: String(page - 1) }).toString()}`}
+            className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
+          >
+            Previous
+          </Link>
+        )}
+        <span className="px-3 py-2 text-sm text-zinc-500">Page {page}</span>
+        {hasMore && (
+          <Link
+            href={`/movements?${new URLSearchParams({ ...filterParams, page: String(page + 1) }).toString()}`}
+            className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
+          >
+            Next
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
