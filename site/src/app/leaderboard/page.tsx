@@ -141,7 +141,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       </div>
 
       {/* ── Top 10 Chart ─────────────────────────────────── */}
-      {rows.length > 0 && page === 1 && (
+      {page === 1 && (
         <section className="mb-6 overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
           <div className="mb-5">
             <h2 className="text-lg font-semibold text-zinc-100">Top 10 Agents by Transaction Volume</h2>
@@ -149,33 +149,43 @@ export default async function LeaderboardPage({ searchParams }: Props) {
               {year}{agency ? ` · ${agency}` : ''}{activePropertyType ? ` · ${formatLabel(activePropertyType)}` : ''}{activeTransactionType ? ` · ${formatLabel(activeTransactionType)}` : ''}
             </p>
           </div>
-          <div className="space-y-2.5">
-            {rows.slice(0, 10).map((agent, i) => {
-              const maxTxn = rows[0].transactions;
-              const pct = maxTxn > 0 ? Math.round((agent.transactions / maxTxn) * 100) : 0;
-              return (
-                <div key={agent.cea_number} className="group flex items-center gap-3">
-                  <div className="w-6 shrink-0 text-right text-xs font-bold tabular-nums text-zinc-500">
-                    {agent.rank}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="relative h-8 overflow-hidden rounded-lg bg-zinc-800/40">
-                      <div
-                        className={`absolute inset-y-0 left-0 rounded-lg transition-all duration-500 ${i === 0 ? 'bg-gradient-to-r from-blue-600 to-cyan-400' : i < 3 ? 'bg-gradient-to-r from-blue-600/80 to-blue-400/60' : 'bg-blue-500/30'}`}
-                        style={{ width: `${Math.max(8, pct)}%` }}
-                      />
-                      <div className="relative z-10 flex h-full items-center justify-between px-3">
-                        <Link href={`/agent/${agent.cea_number}`} className="truncate text-xs font-medium text-zinc-100 transition hover:text-white">
-                          {agent.name}
-                        </Link>
-                        <span className="ml-2 shrink-0 text-xs font-bold tabular-nums text-zinc-200">{agent.transactions.toLocaleString()}</span>
+          {rows.length > 0 ? (
+            <div className="space-y-2.5">
+              {rows.slice(0, 10).map((agent, i) => {
+                const maxTxn = rows[0].transactions;
+                const pct = maxTxn > 0 ? Math.round((agent.transactions / maxTxn) * 100) : 0;
+                return (
+                  <div key={agent.cea_number} className="group flex items-center gap-3">
+                    <div className="w-6 shrink-0 text-right text-xs font-bold tabular-nums text-zinc-500">
+                      {agent.rank}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="relative h-8 overflow-hidden rounded-lg bg-zinc-800/40">
+                        <div
+                          className={`absolute inset-y-0 left-0 rounded-lg transition-all duration-500 ${i === 0 ? 'bg-gradient-to-r from-blue-600 to-cyan-400' : i < 3 ? 'bg-gradient-to-r from-blue-600/80 to-blue-400/60' : 'bg-blue-500/30'}`}
+                          style={{ width: `${Math.max(8, pct)}%` }}
+                        />
+                        <div className="relative z-10 flex h-full items-center justify-between px-3">
+                          <Link href={`/agent/${agent.cea_number}`} className="truncate text-xs font-medium text-zinc-100 transition hover:text-white">
+                            {agent.name}
+                          </Link>
+                          <span className="ml-2 shrink-0 text-xs font-bold tabular-nums text-zinc-200">{agent.transactions.toLocaleString()}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <svg className="mb-3 h-8 w-8 text-zinc-700" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+              </svg>
+              <p className="text-sm text-zinc-500">No matching transactions for this filter combination.</p>
+              <p className="mt-1 text-xs text-zinc-600">Try removing a filter to broaden the results.</p>
+            </div>
+          )}
         </section>
       )}
 
