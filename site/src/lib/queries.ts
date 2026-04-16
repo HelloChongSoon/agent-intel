@@ -1,5 +1,5 @@
-import { cookies } from 'next/headers';
-import { createClient } from '@/utils/supabase/server';
+import { unstable_cache } from 'next/cache';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import { slugifySegment } from '@/lib/format';
 
 export interface LeaderboardRow {
@@ -46,39 +46,217 @@ function extractRpcScalar<T extends string | number>(
   return null;
 }
 
-async function getSupabase() {
-  try {
-    const cookieStore = await cookies();
-    return createClient(cookieStore);
-  } catch (error) {
-    console.error('Failed to initialize Supabase in server query layer:', error);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const hasSupabaseEnv = Boolean(supabaseUrl && supabaseKey);
+let publicSupabase: SupabaseClient | null | undefined;
+
+function getSupabase() {
+  if (!hasSupabaseEnv) {
     return null;
   }
+
+  if (publicSupabase !== undefined) {
+    return publicSupabase;
+  }
+
+  try {
+    publicSupabase = createSupabaseClient(supabaseUrl!, supabaseKey!, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to initialize Supabase in query layer:', error);
+    publicSupabase = null;
+  }
+
+  return publicSupabase;
 }
+
+function asTextArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.length > 0);
+}
+
+function asNumberArray(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => Number(item))
+    .filter((item) => Number.isFinite(item));
+}
+
+function parseCountList(
+  value: unknown,
+  itemKey: string
+): Array<{ value: string; count: number }> {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      const listValue = record[itemKey];
+      const count = Number(record.count);
+      if (typeof listValue !== 'string' || !listValue || !Number.isFinite(count)) return null;
+      return { value: listValue, count };
+    })
+    .filter((item): item is { value: string; count: number } => Boolean(item));
+}
+
+function parseAreaCountList(value: unknown): Array<{ area: string; count: number }> {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      const area = record.area;
+      const count = Number(record.count);
+      if (typeof area !== 'string' || !area || !Number.isFinite(count)) return null;
+      return { area, count };
+    })
+    .filter((item): item is { area: string; count: number } => Boolean(item));
+}
+
+function parseMonthlyActivity(value: unknown): Array<{ bucket: string; count: number }> {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      const bucket = record.bucket;
+      const count = Number(record.count);
+      if (typeof bucket !== 'string' || !bucket || !Number.isFinite(count)) return null;
+      return { bucket, count };
+    })
+    .filter((item): item is { bucket: string; count: number } => Boolean(item));
+}
+
+function parseMovementBreakdown(
+  value: unknown
+): Array<{ weekStart: string; counts: Record<string, number>; total: number }> {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      const weekStart = record.week_start;
+      const total = Number(record.total);
+      if (typeof weekStart !== 'string' || !Number.isFinite(total)) return null;
+
+      const countsRecord =
+        record.counts && typeof record.counts === 'object'
+          ? Object.fromEntries(
+              Object.entries(record.counts as Record<string, unknown>).map(([key, rawCount]) => [
+                key,
+                Number(rawCount) || 0,
+              ])
+            )
+          : {};
+
+      return { weekStart, counts: countsRecord, total };
+    })
+    .filter(
+      (
+        item
+      ): item is { weekStart: string; counts: Record<string, number>; total: number } => Boolean(item)
+    );
+}
+
+function parseAgencyNetChange(
+  value: unknown
+): Array<{ agency: string; gained: number; lost: number; net: number }> {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      const agency = record.agency;
+      const gained = Number(record.gained);
+      const lost = Number(record.lost);
+      const net = Number(record.net);
+      if (typeof agency !== 'string' || !agency) return null;
+      if (![gained, lost, net].every(Number.isFinite)) return null;
+      return { agency, gained, lost, net };
+    })
+    .filter(
+      (item): item is { agency: string; gained: number; lost: number; net: number } => Boolean(item)
+    );
+}
+
+export interface AgentSummary {
+  ceaNumber: string;
+  totalTransactions: number;
+  latestActivity: string | null;
+  topPropertyTypes: Array<{ value: string; count: number }>;
+  topTransactionTypes: Array<{ value: string; count: number }>;
+  topRoles: Array<{ value: string; count: number }>;
+  uniqueAreaCount: number;
+  monthlyActivity: Array<{ bucket: string; count: number }>;
+  topRecentAreas: Array<{ area: string; count: number }>;
+  filterPropertyTypes: string[];
+  filterTransactionTypes: string[];
+  filterRoles: string[];
+  filterYears: number[];
+}
+
+export interface AgentTransactionFilters {
+  propertyTypes: string[];
+  transactionTypes: string[];
+  roles: string[];
+  years: number[];
+  monthIndexes: number[];
+}
+
+export interface AgentTransactionPageResult {
+  rows: TransactionRow[];
+  total: number;
+}
+
+const getCachedAvailableLeaderboardYears = unstable_cache(
+  async () => {
+    const currentYear = new Date().getFullYear();
+    const supabase = getSupabase();
+
+    if (!supabase) {
+      return [currentYear];
+    }
+
+    const { data, error } = await supabase.rpc('get_available_leaderboard_years');
+
+    if (error) {
+      console.error('getAvailableLeaderboardYears failed:', error.message);
+      return [currentYear];
+    }
+
+    const years = ((data || []) as Array<unknown>)
+      .map((value) => extractRpcScalar<number | string>(value, 'year'))
+      .filter((value): value is number | string => value !== null)
+      .map((value) => Number(value))
+      .filter((year) => Number.isInteger(year))
+      .sort((a, b) => b - a);
+
+    return years.length > 0 ? years : [currentYear];
+  },
+  ['leaderboard-years'],
+  { revalidate: 600 }
+);
 
 export async function getAvailableLeaderboardYears(minYear: number = 2017): Promise<number[]> {
   const currentYear = new Date().getFullYear();
-  const supabase = await getSupabase();
+  const years = await getCachedAvailableLeaderboardYears();
+  const filteredYears = years.filter((year) => year >= minYear && year <= currentYear);
 
-  if (!supabase) {
-    return Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
-  }
-
-  const { data, error } = await supabase.rpc('get_available_leaderboard_years');
-
-  if (error) {
-    console.error('getAvailableLeaderboardYears failed:', error.message);
-    return Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
-  }
-
-  const years = ((data || []) as Array<unknown>)
-    .map((value) => extractRpcScalar<number | string>(value, 'year'))
-    .filter((value): value is number | string => value !== null)
-    .map((value) => Number(value))
-    .filter((year: number) => Number.isInteger(year) && year >= minYear && year <= currentYear)
-    .sort((a, b) => b - a);
-
-  return years.length > 0 ? years : [currentYear];
+  return filteredYears.length > 0
+    ? filteredYears
+    : Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
 }
 
 export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<number> {
@@ -88,39 +266,128 @@ export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<
   return availableYears[0] || currentYear;
 }
 
+const getCachedLeaderboardFilterOptions = unstable_cache(
+  async (yearFilter: string | null): Promise<LeaderboardFilterOptions> => {
+    const supabase = getSupabase();
+
+    if (!supabase) {
+      return { propertyTypes: [], transactionTypes: [] };
+    }
+
+    const [propertyTypesResult, transactionTypesResult] = await Promise.all([
+      supabase.rpc('get_available_leaderboard_property_types', { year_filter: yearFilter }),
+      supabase.rpc('get_available_leaderboard_transaction_types', { year_filter: yearFilter }),
+    ]);
+
+    if (propertyTypesResult.error) {
+      console.error('getLeaderboardFilterOptions property types failed:', propertyTypesResult.error.message);
+    }
+
+    if (transactionTypesResult.error) {
+      console.error('getLeaderboardFilterOptions transaction types failed:', transactionTypesResult.error.message);
+    }
+
+    const propertyTypes = ((propertyTypesResult.data || []) as Array<unknown>)
+      .map((value) => extractRpcScalar<string>(value, 'property_type'))
+      .filter((value): value is string => Boolean(value))
+      .sort((a, b) => a.localeCompare(b));
+
+    const transactionTypes = ((transactionTypesResult.data || []) as Array<unknown>)
+      .map((value) => extractRpcScalar<string>(value, 'transaction_type'))
+      .filter((value): value is string => Boolean(value))
+      .sort((a, b) => a.localeCompare(b));
+
+    return { propertyTypes, transactionTypes };
+  },
+  ['leaderboard-filter-options'],
+  { revalidate: 600 }
+);
+
 export async function getLeaderboardFilterOptions(year?: number): Promise<LeaderboardFilterOptions> {
-  const supabase = await getSupabase();
-
-  if (!supabase) {
-    return { propertyTypes: [], transactionTypes: [] };
-  }
-
-  const yearFilter = year ? String(year) : null;
-  const [propertyTypesResult, transactionTypesResult] = await Promise.all([
-    supabase.rpc('get_available_leaderboard_property_types', { year_filter: yearFilter }),
-    supabase.rpc('get_available_leaderboard_transaction_types', { year_filter: yearFilter }),
-  ]);
-
-  if (propertyTypesResult.error) {
-    console.error('getLeaderboardFilterOptions property types failed:', propertyTypesResult.error.message);
-  }
-
-  if (transactionTypesResult.error) {
-    console.error('getLeaderboardFilterOptions transaction types failed:', transactionTypesResult.error.message);
-  }
-
-  const propertyTypes = ((propertyTypesResult.data || []) as Array<unknown>)
-    .map((value) => extractRpcScalar<string>(value, 'property_type'))
-    .filter((value): value is string => Boolean(value))
-    .sort((a, b) => a.localeCompare(b));
-
-  const transactionTypes = ((transactionTypesResult.data || []) as Array<unknown>)
-    .map((value) => extractRpcScalar<string>(value, 'transaction_type'))
-    .filter((value): value is string => Boolean(value))
-    .sort((a, b) => a.localeCompare(b));
-
-  return { propertyTypes, transactionTypes };
+  return getCachedLeaderboardFilterOptions(year ? String(year) : null);
 }
+
+const getCachedLeaderboard = unstable_cache(
+  async (params: {
+    year: number;
+    page: number;
+    pageSize: number;
+    agency: string | null;
+    propertyType: string | null;
+    transactionType: string | null;
+  }): Promise<{ rows: LeaderboardRow[]; total: number }> => {
+    const supabase = getSupabase();
+    if (!supabase) return { rows: [], total: 0 };
+
+    const from = (params.page - 1) * params.pageSize;
+    const to = from + params.pageSize - 1;
+
+    const { data, error } = await supabase.rpc('get_leaderboard', {
+      year_filter: String(params.year),
+      agency_filter: params.agency,
+      property_type_filter: params.propertyType,
+      transaction_type_filter: params.transactionType,
+      page_num: params.page,
+      page_size: params.pageSize,
+    });
+
+    if (error) {
+      console.error('getLeaderboard failed:', error.message);
+
+      if (error.message.includes('statement timeout')) {
+        let fallbackQuery = supabase
+          .from('agents')
+          .select('cea_number, name, agency, total_transactions', { count: 'exact' })
+          .gt('total_transactions', 0);
+
+        if (params.agency) {
+          fallbackQuery = fallbackQuery.eq('agency', params.agency);
+        }
+
+        const { data: fallbackData, count: fallbackCount, error: fallbackError } = await fallbackQuery
+          .order('total_transactions', { ascending: false })
+          .order('cea_number', { ascending: true })
+          .range(from, to);
+
+        if (fallbackError) {
+          console.error('getLeaderboard fallback failed:', fallbackError.message);
+          return { rows: [], total: 0 };
+        }
+
+        const fallbackRows: LeaderboardRow[] = (fallbackData || []).map((row, index) => ({
+          rank: from + index + 1,
+          name: row.name,
+          cea_number: row.cea_number,
+          agency: row.agency || '',
+          transactions: Number(row.total_transactions || 0),
+        }));
+
+        return {
+          rows: fallbackRows,
+          total: fallbackCount || 0,
+        };
+      }
+
+      return { rows: [], total: 0 };
+    }
+
+    const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
+    const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+
+    return {
+      rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
+        rank,
+        name,
+        cea_number,
+        agency,
+        transactions,
+      })),
+      total,
+    };
+  },
+  ['leaderboard'],
+  { revalidate: 600 }
+);
 
 export async function getLeaderboard(params: {
   year?: number;
@@ -130,81 +397,14 @@ export async function getLeaderboard(params: {
   propertyType?: string;
   transactionType?: string;
 }): Promise<{ rows: LeaderboardRow[]; total: number }> {
-  const supabase = await getSupabase();
-  if (!supabase) return { rows: [], total: 0 };
-  const year = params.year || new Date().getFullYear();
-  const page = params.page || 1;
-  const pageSize = params.pageSize || 25;
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  const { data, error } = await supabase.rpc('get_leaderboard', {
-    year_filter: String(year),
-    agency_filter: params.agency || null,
-    property_type_filter: params.propertyType || null,
-    transaction_type_filter: params.transactionType || null,
-    page_num: page,
-    page_size: pageSize,
+  return getCachedLeaderboard({
+    year: params.year || new Date().getFullYear(),
+    page: params.page || 1,
+    pageSize: params.pageSize || 25,
+    agency: params.agency || null,
+    propertyType: params.propertyType || null,
+    transactionType: params.transactionType || null,
   });
-
-  if (error) {
-    console.error('getLeaderboard failed:', error.message);
-
-    // Fallback to live agents table when the unfiltered RPC hits DB timeout.
-    if (error.message.includes('statement timeout')) {
-      if (params.year) {
-        return { rows: [], total: 0 };
-      }
-
-      let fallbackQuery = supabase
-        .from('agents')
-        .select('cea_number, name, agency, total_transactions', { count: 'exact' })
-        .gt('total_transactions', 0);
-
-      if (params.agency) {
-        fallbackQuery = fallbackQuery.eq('agency', params.agency);
-      }
-
-      const { data: fallbackData, count: fallbackCount, error: fallbackError } = await fallbackQuery
-        .order('total_transactions', { ascending: false })
-        .order('cea_number', { ascending: true })
-        .range(from, to);
-
-      if (fallbackError) {
-        console.error('getLeaderboard fallback failed:', fallbackError.message);
-        return { rows: [], total: 0 };
-      }
-
-      const fallbackRows: LeaderboardRow[] = (fallbackData || []).map((row, index) => ({
-        rank: from + index + 1,
-        name: row.name,
-        cea_number: row.cea_number,
-        agency: row.agency || '',
-        transactions: Number(row.total_transactions || 0),
-      }));
-
-      return {
-        rows: fallbackRows,
-        total: fallbackCount || 0,
-      };
-    }
-
-    return { rows: [], total: 0 };
-  }
-
-  const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
-  const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
-
-  return {
-    rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
-      rank,
-      name,
-      cea_number,
-      agency,
-      transactions,
-    })),
-    total,
-  };
 }
 
 export interface AgentRow {
@@ -239,66 +439,152 @@ export interface TransactionRow {
   location: string;
 }
 
-const SUPABASE_BATCH_SIZE = 1000;
+const getCachedAgentSummary = unstable_cache(
+  async (ceaNumber: string): Promise<AgentSummary | null> => {
+    const supabase = getSupabase();
+    if (!supabase) return null;
 
-const MONTH_INDEX: Record<string, number> = {
-  JAN: 0,
-  FEB: 1,
-  MAR: 2,
-  APR: 3,
-  MAY: 4,
-  JUN: 5,
-  JUL: 6,
-  AUG: 7,
-  SEP: 8,
-  OCT: 9,
-  NOV: 10,
-  DEC: 11,
-};
-
-function getTransactionDateSortKey(value: string): number {
-  const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
-  if (periodMatch) {
-    const month = MONTH_INDEX[periodMatch[1]] ?? -1;
-    return Number(periodMatch[2]) * 12 + month;
-  }
-
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? -1 : parsed;
-}
-
-export async function getAgentTransactions(ceaNumber: string): Promise<TransactionRow[]> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
-
-  const rows: TransactionRow[] = [];
-  let from = 0;
-
-  while (true) {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('date, property_type, transaction_type, role, location')
-      .eq('cea_number', ceaNumber)
-      .range(from, from + SUPABASE_BATCH_SIZE - 1);
+    const { data, error } = await supabase.rpc('get_agent_summary', {
+      target_cea: ceaNumber,
+    });
 
     if (error) {
-      console.error('getAgentTransactions failed:', error.message);
-      return [];
+      console.error('getAgentSummary failed:', error.message);
+      return null;
     }
 
-    const batch = (data || []) as TransactionRow[];
-    rows.push(...batch);
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row || typeof row !== 'object') return null;
 
-    if (batch.length < SUPABASE_BATCH_SIZE) {
-      break;
+    const record = row as Record<string, unknown>;
+    return {
+      ceaNumber: String(record.cea_number || ceaNumber),
+      totalTransactions: Number(record.total_transactions || 0),
+      latestActivity: typeof record.latest_activity === 'string' ? record.latest_activity : null,
+      topPropertyTypes: parseCountList(record.top_property_types, 'property_type'),
+      topTransactionTypes: parseCountList(record.top_transaction_types, 'transaction_type'),
+      topRoles: parseCountList(record.top_roles, 'role'),
+      uniqueAreaCount: Number(record.unique_area_count || 0),
+      monthlyActivity: parseMonthlyActivity(record.monthly_activity),
+      topRecentAreas: parseAreaCountList(record.top_recent_areas),
+      filterPropertyTypes: asTextArray(record.filter_property_types),
+      filterTransactionTypes: asTextArray(record.filter_transaction_types),
+      filterRoles: asTextArray(record.filter_roles),
+      filterYears: asNumberArray(record.filter_years).sort((a, b) => b - a),
+    };
+  },
+  ['agent-summary'],
+  { revalidate: 600 }
+);
+
+export async function getAgentSummary(ceaNumber: string): Promise<AgentSummary | null> {
+  return getCachedAgentSummary(ceaNumber);
+}
+
+const getCachedAgentTransactionFilters = unstable_cache(
+  async (ceaNumber: string, yearFilter: string | null): Promise<AgentTransactionFilters> => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return {
+        propertyTypes: [],
+        transactionTypes: [],
+        roles: [],
+        years: [],
+        monthIndexes: [],
+      };
     }
 
-    from += SUPABASE_BATCH_SIZE;
+    const { data, error } = await supabase.rpc('get_agent_transaction_filters', {
+      target_cea: ceaNumber,
+      year_filter: yearFilter,
+    });
+
+    if (error) {
+      console.error('getAgentTransactionFilters failed:', error.message);
+      return {
+        propertyTypes: [],
+        transactionTypes: [],
+        roles: [],
+        years: [],
+        monthIndexes: [],
+      };
+    }
+
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row || typeof row !== 'object') {
+      return {
+        propertyTypes: [],
+        transactionTypes: [],
+        roles: [],
+        years: [],
+        monthIndexes: [],
+      };
+    }
+
+    const record = row as Record<string, unknown>;
+    return {
+      propertyTypes: asTextArray(record.property_types),
+      transactionTypes: asTextArray(record.transaction_types),
+      roles: asTextArray(record.roles),
+      years: asNumberArray(record.years).sort((a, b) => b - a),
+      monthIndexes: asNumberArray(record.month_indexes).sort((a, b) => a - b),
+    };
+  },
+  ['agent-transaction-filters'],
+  { revalidate: 600 }
+);
+
+export async function getAgentTransactionFilters(
+  ceaNumber: string,
+  year?: number | string | null
+): Promise<AgentTransactionFilters> {
+  return getCachedAgentTransactionFilters(ceaNumber, year ? String(year) : null);
+}
+
+export async function getAgentTransactionsPage(params: {
+  ceaNumber: string;
+  page?: number;
+  pageSize?: number;
+  propertyType?: string | null;
+  transactionType?: string | null;
+  role?: string | null;
+  year?: number | string | null;
+  monthIndex?: number | string | null;
+}): Promise<AgentTransactionPageResult> {
+  const supabase = getSupabase();
+  if (!supabase) return { rows: [], total: 0 };
+
+  const { data, error } = await supabase.rpc('get_agent_transactions_page', {
+    target_cea: params.ceaNumber,
+    property_type_filter: params.propertyType || null,
+    transaction_type_filter: params.transactionType || null,
+    role_filter: params.role || null,
+    year_filter: params.year ? String(params.year) : null,
+    month_filter:
+      params.monthIndex === null || params.monthIndex === undefined || params.monthIndex === ''
+        ? null
+        : Number(params.monthIndex),
+    page_num: params.page || 1,
+    page_size: params.pageSize || 25,
+  });
+
+  if (error) {
+    console.error('getAgentTransactionsPage failed:', error.message);
+    return { rows: [], total: 0 };
   }
 
-  return rows.sort(
-    (a, b) => getTransactionDateSortKey(b.date) - getTransactionDateSortKey(a.date)
-  );
+  const rows = (data || []) as Array<TransactionRow & { total_count: number }>;
+
+  return {
+    rows: rows.map(({ date, property_type, transaction_type, role, location }) => ({
+      date,
+      property_type,
+      transaction_type,
+      role,
+      location,
+    })),
+    total: rows.length > 0 ? Number(rows[0].total_count) : 0,
+  };
 }
 
 export async function getAgentTransactionSummaries(
@@ -307,35 +593,38 @@ export async function getAgentTransactionSummaries(
   const dedupedCeaNumbers = [...new Set(ceaNumbers.filter(Boolean))];
   if (dedupedCeaNumbers.length === 0) return {};
 
-  const supabase = await getSupabase();
+  const supabase = getSupabase();
   if (!supabase) return {};
 
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('cea_number, date')
-    .in('cea_number', dedupedCeaNumbers)
-    .limit(50000);
+  const { data, error } = await supabase.rpc('get_agent_search_summaries', {
+    cea_numbers: dedupedCeaNumbers,
+  });
 
   if (error) {
     console.error('getAgentTransactionSummaries failed:', error.message);
     return {};
   }
 
-  const summaries = new Map<string, { count: number; latest: string | null }>();
-  for (const row of (data || []) as Array<{ cea_number: string; date: string }>) {
-    const existing = summaries.get(row.cea_number) || { count: 0, latest: null };
-    const latest =
-      !existing.latest || getTransactionDateSortKey(row.date) > getTransactionDateSortKey(existing.latest)
-        ? row.date
-        : existing.latest;
+  return Object.fromEntries(
+    ((data || []) as Array<Record<string, unknown>>)
+      .map((row) => {
+        const ceaNumber = extractRpcScalar<string>(row, 'cea_number');
+        if (!ceaNumber) return null;
 
-    summaries.set(row.cea_number, {
-      count: existing.count + 1,
-      latest,
-    });
-  }
-
-  return Object.fromEntries(summaries.entries());
+        return [
+          ceaNumber,
+          {
+            count: Number(extractRpcScalar<number | string>(row, 'total_transactions') || 0),
+            latest: extractRpcScalar<string>(row, 'latest_activity'),
+          },
+        ] as const;
+      })
+      .filter(
+        (
+          entry
+        ): entry is readonly [string, { count: number; latest: string | null }] => Boolean(entry)
+      )
+  );
 }
 
 export interface MovementRow {
@@ -364,25 +653,14 @@ export interface MovementInsights {
   }>;
 }
 
-function getWeekStart(value: string): string {
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? new Date(`${value}T00:00:00Z`)
-    : new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  const day = date.getUTCDay();
-  const offset = day === 0 ? 6 : day - 1;
-  date.setUTCDate(date.getUTCDate() - offset);
-  return date.toISOString().slice(0, 10);
-}
-
 export async function getMovements(params: {
   page?: number;
   pageSize?: number;
   type?: string;
   query?: string;
+  includeCount?: boolean;
 }): Promise<{ rows: MovementRow[]; total: number }> {
-  const supabase = await getSupabase();
+  const supabase = getSupabase();
   if (!supabase) return { rows: [], total: 0 };
   const page = params.page || 1;
   const pageSize = params.pageSize || 20;
@@ -391,7 +669,7 @@ export async function getMovements(params: {
 
   let query = supabase
     .from('movements')
-    .select('*', { count: 'exact' });
+    .select('*', params.includeCount === false ? undefined : { count: 'exact' });
 
   if (params.type) {
     query = query.eq('type', params.type);
@@ -415,107 +693,74 @@ export async function getMovements(params: {
 
   return {
     rows: (data || []) as MovementRow[],
-    total: count || 0,
+    total: params.includeCount === false ? 0 : count || 0,
   };
 }
 
-export async function getMovementInsights(weeks: number = 10): Promise<MovementInsights> {
-  const supabase = await getSupabase();
-  if (!supabase) {
-    return {
-      totalMovements: 0,
-      countsByType: {},
-      weeklyBreakdown: [],
-      topAgencyNetChange: [],
-    };
-  }
-
-  const [countResult, dataResult] = await Promise.all([
-    supabase
-      .from('movements')
-      .select('id', { count: 'exact', head: true }),
-    supabase
-      .from('movements')
-      .select('date, type, previous_agency, new_agency')
-      .order('date', { ascending: false })
-      .limit(20000),
-  ]);
-
-  if (countResult.error) {
-    console.error('getMovementInsights count failed:', countResult.error.message);
-  }
-
-  if (dataResult.error) {
-    console.error('getMovementInsights failed:', dataResult.error.message);
-    return {
-      totalMovements: 0,
-      countsByType: {},
-      weeklyBreakdown: [],
-      topAgencyNetChange: [],
-    };
-  }
-
-  const data = dataResult.data || [];
-  const countsByType = new Map<string, number>();
-  const weeklyCounts = new Map<string, Map<string, number>>();
-  const agencyTotals = new Map<string, { gained: number; lost: number }>();
-
-  for (const row of (data || []) as Array<{
-    date: string;
-    type: string | null;
-    previous_agency: string | null;
-    new_agency: string | null;
-  }>) {
-    const type = row.type || 'unknown';
-    countsByType.set(type, (countsByType.get(type) || 0) + 1);
-
-    const weekStart = getWeekStart(row.date);
-    const weekBucket = weeklyCounts.get(weekStart) || new Map<string, number>();
-    weekBucket.set(type, (weekBucket.get(type) || 0) + 1);
-    weeklyCounts.set(weekStart, weekBucket);
-
-    if (row.new_agency) {
-      const bucket = agencyTotals.get(row.new_agency) || { gained: 0, lost: 0 };
-      bucket.gained += 1;
-      agencyTotals.set(row.new_agency, bucket);
+const getCachedMovementInsights = unstable_cache(
+  async (weeks: number): Promise<MovementInsights> => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return {
+        totalMovements: 0,
+        countsByType: {},
+        weeklyBreakdown: [],
+        topAgencyNetChange: [],
+      };
     }
 
-    if (row.previous_agency) {
-      const bucket = agencyTotals.get(row.previous_agency) || { gained: 0, lost: 0 };
-      bucket.lost += 1;
-      agencyTotals.set(row.previous_agency, bucket);
-    }
-  }
-
-  const weeklyBreakdown = [...weeklyCounts.entries()]
-    .sort((a, b) => Date.parse(a[0]) - Date.parse(b[0]))
-    .slice(-weeks)
-    .map(([weekStart, bucket]) => {
-      const counts = Object.fromEntries(bucket.entries());
-      const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-      return { weekStart, counts, total };
+    const { data, error } = await supabase.rpc('get_movement_insights', {
+      weeks,
     });
 
-  const topAgencyNetChange = [...agencyTotals.entries()]
-    .map(([agency, counts]) => ({
-      agency,
-      gained: counts.gained,
-      lost: counts.lost,
-      net: counts.gained - counts.lost,
-    }))
-    .sort((a, b) => Math.abs(b.net) - Math.abs(a.net) || b.gained - a.gained || a.agency.localeCompare(b.agency))
-    .slice(0, 8);
+    if (error) {
+      console.error('getMovementInsights failed:', error.message);
+      return {
+        totalMovements: 0,
+        countsByType: {},
+        weeklyBreakdown: [],
+        topAgencyNetChange: [],
+      };
+    }
 
-  return {
-    totalMovements: countResult.count || data.length,
-    countsByType: Object.fromEntries(countsByType.entries()),
-    weeklyBreakdown,
-    topAgencyNetChange,
-  };
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row || typeof row !== 'object') {
+      return {
+        totalMovements: 0,
+        countsByType: {},
+        weeklyBreakdown: [],
+        topAgencyNetChange: [],
+      };
+    }
+
+    const record = row as Record<string, unknown>;
+    const countsByType =
+      record.counts_by_type && typeof record.counts_by_type === 'object'
+        ? Object.fromEntries(
+            Object.entries(record.counts_by_type as Record<string, unknown>).map(([key, rawCount]) => [
+              key,
+              Number(rawCount) || 0,
+            ])
+          )
+        : {};
+
+    return {
+      totalMovements: Number(record.total_movements || 0),
+      countsByType,
+      weeklyBreakdown: parseMovementBreakdown(record.weekly_breakdown),
+      topAgencyNetChange: parseAgencyNetChange(record.top_agency_net_change),
+    };
+  },
+  ['movement-insights'],
+  { revalidate: 600 }
+);
+
+export async function getMovementInsights(weeks: number = 10): Promise<MovementInsights> {
+  return getCachedMovementInsights(weeks);
 }
 
 export async function getAgentMovements(ceaNumber: string, limit: number = 10): Promise<MovementRow[]> {
-  const supabase = await getSupabase();
+  const supabase = getSupabase();
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -534,7 +779,7 @@ export async function getAgentMovements(ceaNumber: string, limit: number = 10): 
 }
 
 export async function searchAgents(query: string, limit: number = 50): Promise<AgentRow[]> {
-  const supabase = await getSupabase();
+  const supabase = getSupabase();
   if (!supabase) return [];
   // Use trigram similarity for fuzzy search on name, exact match on CEA number
   const { data, error } = await supabase
@@ -550,28 +795,36 @@ export async function searchAgents(query: string, limit: number = 50): Promise<A
   return (data || []) as AgentRow[];
 }
 
+const getCachedAgencies = unstable_cache(
+  async (): Promise<AgencyOption[]> => {
+    const supabase = getSupabase();
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc('get_agency_options');
+
+    if (error) {
+      console.error('getAgencies failed:', error.message);
+      return [];
+    }
+
+    return ((data || []) as Array<Record<string, unknown>>)
+      .map((row) => {
+        const name = extractRpcScalar<string>(row, 'agency');
+        const count = extractRpcScalar<number | string>(row, 'agent_count');
+        if (!name || count === null) return null;
+        return {
+          name,
+          count: Number(count),
+        };
+      })
+      .filter((value): value is AgencyOption => Boolean(value))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  },
+  ['agencies'],
+  { revalidate: 600 }
+);
+
 export async function getAgencies(): Promise<AgencyOption[]> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase.rpc('get_agency_options');
-
-  if (error) {
-    console.error('getAgencies failed:', error.message);
-    return [];
-  }
-
-  return ((data || []) as Array<Record<string, unknown>>)
-    .map((row) => {
-      const name = extractRpcScalar<string>(row, 'agency');
-      const count = extractRpcScalar<number | string>(row, 'agent_count');
-      if (!name || count === null) return null;
-      return {
-        name,
-        count: Number(count),
-      };
-    })
-    .filter((value): value is AgencyOption => Boolean(value))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  return getCachedAgencies();
 }
 
 export async function getAllAgentRefs(): Promise<Array<{ cea_number: string; updated_at?: string | null }>> {
@@ -597,7 +850,7 @@ export async function getAgencyBySlug(slug: string): Promise<AgencyOption | null
 }
 
 export async function getAgencyMovements(agency: string, limit: number = 10): Promise<MovementRow[]> {
-  const supabase = await getSupabase();
+  const supabase = getSupabase();
   if (!supabase) return [];
 
   const [previousAgencyResult, newAgencyResult] = await Promise.all([
@@ -633,50 +886,39 @@ export async function getAgencyMovements(agency: string, limit: number = 10): Pr
     .slice(0, limit);
 }
 
-export async function getAgencyPropertyMix(agency: string): Promise<Array<{ propertyType: string; count: number }>> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
+const getCachedAgencyPropertyMix = unstable_cache(
+  async (agency: string): Promise<Array<{ propertyType: string; count: number }>> => {
+    const supabase = getSupabase();
+    if (!supabase) return [];
 
-  const { data: agentRows, error: agentError } = await supabase
-    .from('agents')
-    .select('cea_number')
-    .eq('agency', agency)
-    .limit(5000);
-
-  if (agentError) {
-    console.error('getAgencyPropertyMix agent lookup failed:', agentError.message);
-    return [];
-  }
-
-  const ceaNumbers = [...new Set(((agentRows || []) as Array<{ cea_number: string | null }>).map((row) => row.cea_number).filter(Boolean))] as string[];
-  if (ceaNumbers.length === 0) return [];
-
-  const counts = new Map<string, number>();
-  const chunkSize = 200;
-
-  for (let i = 0; i < ceaNumbers.length; i += chunkSize) {
-    const chunk = ceaNumbers.slice(i, i + chunkSize);
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('property_type')
-      .in('cea_number', chunk)
-      .limit(50000);
+    const { data, error } = await supabase.rpc('get_agency_property_mix', {
+      agency_filter: agency,
+    });
 
     if (error) {
-      console.error('getAgencyPropertyMix transaction lookup failed:', error.message);
-      continue;
+      console.error('getAgencyPropertyMix failed:', error.message);
+      return [];
     }
 
-    for (const row of (data || []) as Array<{ property_type?: string | null }>) {
-      const propertyType = row.property_type;
-      if (!propertyType) continue;
-      counts.set(propertyType, (counts.get(propertyType) || 0) + 1);
-    }
-  }
+    return ((data || []) as Array<Record<string, unknown>>)
+      .map((row) => {
+        const propertyType = extractRpcScalar<string>(row, 'property_type');
+        const count = extractRpcScalar<number | string>(row, 'transaction_count');
+        if (!propertyType || count === null) return null;
+        return {
+          propertyType,
+          count: Number(count),
+        };
+      })
+      .filter((value): value is { propertyType: string; count: number } => Boolean(value))
+      .sort((a, b) => b.count - a.count);
+  },
+  ['agency-property-mix'],
+  { revalidate: 600 }
+);
 
-  return [...counts.entries()]
-    .map(([propertyType, count]) => ({ propertyType, count }))
-    .sort((a, b) => b.count - a.count);
+export async function getAgencyPropertyMix(agency: string): Promise<Array<{ propertyType: string; count: number }>> {
+  return getCachedAgencyPropertyMix(agency);
 }
 
 export async function getAgencySummary(slug: string): Promise<AgencySummary | null> {
@@ -956,3 +1198,13 @@ export async function getTransactionTypeBySlug(slug: string): Promise<string | n
   const { transactionTypes } = await getLeaderboardFilterOptions(year);
   return transactionTypes.find((value) => slugifySegment(value) === slug) || null;
 }
+
+export const __private__ = {
+  asTextArray,
+  asNumberArray,
+  parseCountList,
+  parseAreaCountList,
+  parseMonthlyActivity,
+  parseMovementBreakdown,
+  parseAgencyNetChange,
+};

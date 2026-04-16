@@ -32,7 +32,7 @@ export default async function Home() {
     getRequestSiteContext(),
     getAgencies(),
     getAvailableLeaderboardYears(),
-    getMovements({ pageSize: 4 }),
+    getMovements({ pageSize: 4, includeCount: false }),
   ]);
   const coverageYear = years[0] || new Date().getFullYear();
   const filterOptions = await getLeaderboardFilterOptions(coverageYear);

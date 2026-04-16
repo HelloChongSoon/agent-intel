@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getAgent, getAgentMovements, getAgentTransactions, getSimilarVolumeAgents, getSameAreaAgents, getSamePropertyTypeAgents, type MovementRow } from '@/lib/queries';
+import { getAgent, getAgentMovements, getAgentSummary, getAgentTransactionFilters, getAgentTransactionsPage, getSimilarVolumeAgents, getSameAreaAgents, getSamePropertyTypeAgents, type MovementRow } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { getRequestAbsoluteUrl } from '@/lib/site';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -140,34 +140,6 @@ function getTransactionSortKey(value: string): number {
   return Number.isNaN(parsed) ? -1 : parsed;
 }
 
-function parseTransactionPeriod(value: string): { year: number | null; monthIndex: number | null } {
-  const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
-  if (periodMatch) {
-    return {
-      year: Number(periodMatch[2]),
-      monthIndex: MONTH_INDEX[periodMatch[1]] ?? null,
-    };
-  }
-
-  const dateMatch = value.match(/^(\d{4})-(\d{2})-\d{2}$/);
-  if (dateMatch) {
-    return {
-      year: Number(dateMatch[1]),
-      monthIndex: Number(dateMatch[2]) - 1,
-    };
-  }
-
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) {
-    return {
-      year: parsed.getFullYear(),
-      monthIndex: parsed.getMonth(),
-    };
-  }
-
-  return { year: null, monthIndex: null };
-}
-
 function formatMonthBucket(value: string): { month: string; year: string } | null {
   const periodMatch = value.match(/^([A-Z]{3})-(\d{4})$/);
   if (!periodMatch) return null;
@@ -266,46 +238,43 @@ export default async function AgentPage({ params, searchParams }: Props) {
   const agent = await getAgent(ceaNumber);
   if (!agent) notFound();
 
-  const [transactions, agentMovements] = await Promise.all([
-    getAgentTransactions(ceaNumber),
+  const currentPage = Math.max(1, Number.parseInt(resolvedSearchParams.txPage || '1', 10) || 1);
+
+  const [agentSummary, transactionFilters, initialTransactionPage, agentMovements] = await Promise.all([
+    getAgentSummary(ceaNumber),
+    getAgentTransactionFilters(ceaNumber, selectedYear || null),
+    getAgentTransactionsPage({
+      ceaNumber,
+      page: currentPage,
+      pageSize,
+      propertyType: selectedPropertyType || null,
+      transactionType: selectedTransactionType || null,
+      role: selectedRole || null,
+      year: selectedYear || null,
+      monthIndex: selectedMonth || null,
+    }),
     getAgentMovements(ceaNumber, 8),
   ]);
-  const totalTransactions = transactions.length > 0 ? transactions.length : Math.max(agent.total_transactions || 0, 0);
+  const totalTransactions = agentSummary?.totalTransactions ?? Math.max(agent.total_transactions || 0, 0);
+  const latestTransaction = agentSummary?.latestActivity || null;
 
-  // Group transaction stats
-  const propertyTypes = new Map<string, number>();
-  const transactionTypes = new Map<string, number>();
-  const roles = new Map<string, number>();
-  const monthlyActivity = new Map<string, number>();
-  for (const tx of transactions) {
-    propertyTypes.set(tx.property_type, (propertyTypes.get(tx.property_type) || 0) + 1);
-    transactionTypes.set(tx.transaction_type, (transactionTypes.get(tx.transaction_type) || 0) + 1);
-    roles.set(tx.role, (roles.get(tx.role) || 0) + 1);
-    monthlyActivity.set(tx.date, (monthlyActivity.get(tx.date) || 0) + 1);
-  }
-
-  const latestTransaction = transactions[0]?.date || null;
-
-  const topPropertyTypes = [...propertyTypes.entries()]
-    .sort((a, b) => b[1] - a[1])
+  const topPropertyTypes = (agentSummary?.topPropertyTypes || [])
+    .map((item) => [item.value, item.count] as const)
     .slice(0, 4);
-  const topTransactionTypes = [...transactionTypes.entries()]
-    .sort((a, b) => b[1] - a[1])
+  const topTransactionTypes = (agentSummary?.topTransactionTypes || [])
+    .map((item) => [item.value, item.count] as const)
     .slice(0, 4);
-  const topRoles = [...roles.entries()]
-    .sort((a, b) => b[1] - a[1])
+  const topRoles = (agentSummary?.topRoles || [])
+    .map((item) => [item.value, item.count] as const)
     .slice(0, 3);
-  const recentAreaCounts = new Map<string, number>();
-  for (const tx of transactions.slice(0, 60)) {
-    const { area } = splitLocation(tx.location);
-    if (area === '—') continue;
-    recentAreaCounts.set(area, (recentAreaCounts.get(area) || 0) + 1);
-  }
-  const topRecentAreas = [...recentAreaCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
+  const topRecentAreas = (agentSummary?.topRecentAreas || [])
+    .map((item) => [item.area, item.count] as const)
     .slice(0, 8);
   // Build continuous 12-month range (fill gaps with zero)
   const MONTH_ABBREVS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const monthlyActivity = new Map(
+    (agentSummary?.monthlyActivity || []).map((item) => [item.bucket, item.count] as const)
+  );
   const sortedMonths = [...monthlyActivity.entries()]
     .sort((a, b) => getTransactionSortKey(b[0]) - getTransactionSortKey(a[0]));
   const recentMonths: [string, number][] = [];
@@ -324,11 +293,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
     }
   }
   const monthlyPeak = Math.max(...recentMonths.map(([, count]) => count), 1);
-  const uniqueAreas = new Set(
-    transactions
-      .map((tx) => splitLocation(tx.location).area)
-      .filter((area) => area !== '—')
-  ).size;
+  const uniqueAreas = agentSummary?.uniqueAreaCount ?? 0;
 
   // Fetch comparable agents based on computed data
   const topArea = topRecentAreas.length > 0 ? topRecentAreas[0][0] : null;
@@ -340,38 +305,34 @@ export default async function AgentPage({ params, searchParams }: Props) {
   ]);
 
   const filters = {
-    propertyTypes: [...propertyTypes.keys()].sort(),
-    transactionTypes: [...transactionTypes.keys()].sort(),
-    roles: [...roles.keys()].sort(),
-    years: [...new Set(
-      transactions
-        .map((tx) => parseTransactionPeriod(tx.date).year)
-        .filter((year): year is number => year !== null)
-    )].sort((a, b) => b - a),
+    propertyTypes: transactionFilters.propertyTypes,
+    transactionTypes: transactionFilters.transactionTypes,
+    roles: transactionFilters.roles,
+    years: transactionFilters.years,
   };
-  const monthOptions = MONTH_OPTIONS.filter((option) => {
-    const monthIndex = Number(option.value);
-    return transactions.some((tx) => {
-      const period = parseTransactionPeriod(tx.date);
-      if (selectedYear && String(period.year) !== selectedYear) return false;
-      return period.monthIndex === monthIndex;
-    });
-  });
-  const filteredTransactions = transactions.filter((tx) => {
-    const period = parseTransactionPeriod(tx.date);
-    if (selectedPropertyType && tx.property_type !== selectedPropertyType) return false;
-    if (selectedTransactionType && tx.transaction_type !== selectedTransactionType) return false;
-    if (selectedRole && tx.role !== selectedRole) return false;
-    if (selectedYear && String(period.year) !== selectedYear) return false;
-    if (selectedMonth && String(period.monthIndex) !== selectedMonth) return false;
-    return true;
-  });
-  const currentPage = Math.max(1, Number.parseInt(resolvedSearchParams.txPage || '1', 10) || 1);
-  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
+  const monthOptions = MONTH_OPTIONS.filter((option) =>
+    transactionFilters.monthIndexes.includes(Number(option.value))
+  );
+
+  let transactionPage = initialTransactionPage;
+  let totalPages = Math.max(1, Math.ceil(transactionPage.total / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const startIndex = (safeCurrentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, filteredTransactions.length);
-  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+  if (safeCurrentPage !== currentPage) {
+    transactionPage = await getAgentTransactionsPage({
+      ceaNumber,
+      page: safeCurrentPage,
+      pageSize,
+      propertyType: selectedPropertyType || null,
+      transactionType: selectedTransactionType || null,
+      role: selectedRole || null,
+      year: selectedYear || null,
+      monthIndex: selectedMonth || null,
+    });
+    totalPages = Math.max(1, Math.ceil(transactionPage.total / pageSize));
+  }
+  const startIndex = transactionPage.total === 0 ? 0 : (safeCurrentPage - 1) * pageSize;
+  const endIndex = transactionPage.total === 0 ? 0 : Math.min(startIndex + transactionPage.rows.length, transactionPage.total);
+  const paginatedTransactions = transactionPage.rows;
   const txSearchParams: Record<string, string> = {};
   if (selectedPropertyType) txSearchParams.propertyType = selectedPropertyType;
   if (selectedTransactionType) txSearchParams.transactionType = selectedTransactionType;
@@ -582,11 +543,11 @@ export default async function AgentPage({ params, searchParams }: Props) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">Property categories (e.g. HDB, Condo)</span>
-                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(propertyTypes.size)}</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(filters.propertyTypes.length)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">Deal types (e.g. Resale, Rental)</span>
-                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(transactionTypes.size)}</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(filters.transactionTypes.length)}</span>
               </div>
             </div>
           </div>
@@ -638,7 +599,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Active Areas</div>
-              <div className="mt-0.5 text-xs text-zinc-400">Based on the latest {Math.min(60, transactions.length)} records</div>
+              <div className="mt-0.5 text-xs text-zinc-400">Based on the latest 60 transactions</div>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -762,7 +723,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
             <div>
               <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Transaction History</h2>
               <p className="mt-0.5 text-xs text-zinc-400">
-                {filteredTransactions.length === 0 ? '0' : `${startIndex + 1}–${endIndex}`} of {formatCount(filteredTransactions.length)} records
+                {transactionPage.total === 0 ? '0' : `${startIndex + 1}–${endIndex}`} of {formatCount(transactionPage.total)} records
               </p>
             </div>
             <div className="text-[11px] tabular-nums text-zinc-400">
@@ -904,7 +865,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
           })}
         </div>
 
-        {filteredTransactions.length > pageSize && (
+        {transactionPage.total > pageSize && (
           <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
             <Pagination
               currentPage={safeCurrentPage}
