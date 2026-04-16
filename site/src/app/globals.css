@@ -307,8 +307,7 @@ html:not(.dark) .hero-blob-5 { opacity: 0.08; }
   .hero-pill-float { animation: none !important; }
   .hero-badge-float { animation: none !important; }
   .hero-pill-border::before { animation: none !important; }
-  .star-cursor { animation: none !important; }
-  .hero-orb-1, .hero-orb-2, .hero-orb-3 { animation: none !important; }
+.hero-orb-1, .hero-orb-2, .hero-orb-3 { animation: none !important; }
   .hero-fade-in { animation: none !important; opacity: 1; transform: none; }
 }
 
@@ -397,23 +396,6 @@ html:not(.dark) .hero-blob-5 { opacity: 0.08; }
 
 @keyframes heroFadeIn {
   to { opacity: 1; transform: translateY(0); }
-}
-
-/* ===================================================================
-   Star cursor
-   =================================================================== */
-
-.star-cursor {
-  clip-path: polygon(
-    50% 0%, 61% 35%, 98% 35%, 68% 57%,
-    79% 91%, 50% 70%, 21% 91%, 32% 57%,
-    2% 35%, 39% 35%
-  );
-  animation: starSpin 3s linear infinite;
-}
-
-@keyframes starSpin {
-  to { transform: rotate(360deg); }
 }
 
 @layer utilities {

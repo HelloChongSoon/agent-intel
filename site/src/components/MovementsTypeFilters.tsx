@@ -13,13 +13,22 @@ const TYPE_LABELS: Record<string, string> = {
 interface MovementsTypeFiltersProps {
   selectedType?: string;
   searchQuery?: string;
+  basePath?: string;
 }
 
-export default function MovementsTypeFilters({ selectedType, searchQuery }: MovementsTypeFiltersProps) {
+export default function MovementsTypeFilters({ selectedType, searchQuery, basePath = '/movements' }: MovementsTypeFiltersProps) {
+  function buildHref(type?: string) {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (type) params.set('type', type);
+    const qs = params.toString();
+    return qs ? `${basePath}?${qs}` : basePath;
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
       <Link
-        href={searchQuery ? `/movements?q=${encodeURIComponent(searchQuery)}` : '/movements'}
+        href={buildHref()}
         onClick={() => posthog.capture('movements_type_filter_applied', { type: null })}
         className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${!selectedType ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
       >
@@ -28,7 +37,7 @@ export default function MovementsTypeFilters({ selectedType, searchQuery }: Move
       {Object.entries(TYPE_LABELS).map(([key, label]) => (
         <Link
           key={key}
-          href={`/movements?${new URLSearchParams({ ...(searchQuery ? { q: searchQuery } : {}), type: key }).toString()}`}
+          href={buildHref(key)}
           onClick={() => posthog.capture('movements_type_filter_applied', { type: key })}
           className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${selectedType === key ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
         >

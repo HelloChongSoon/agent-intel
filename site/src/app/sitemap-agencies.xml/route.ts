@@ -20,11 +20,16 @@ export async function GET(request: Request) {
   const topAgencies = agencies.slice(0, 30);
   const topAreas = areas.slice(0, 20);
 
-  const urls = agencies.flatMap((agency) => {
+  const urls: Array<{ loc: string; lastmod: string }> = [
+    { loc: `${siteUrl}/agencies`, lastmod },
+  ];
+
+  const agencyUrls = agencies.flatMap((agency) => {
     const agencySlug = slugifySegment(agency.name);
     const base = [
       { loc: `${siteUrl}/agency/${agencySlug}`, lastmod },
       { loc: `${siteUrl}/agency/${agencySlug}/leaderboard`, lastmod },
+      { loc: `${siteUrl}/agency/${agencySlug}/movements`, lastmod },
     ];
 
     if (!topAgencies.includes(agency)) return base;
@@ -42,5 +47,5 @@ export async function GET(request: Request) {
     return [...base, ...areaUrls, ...typeUrls];
   });
 
-  return xmlResponse(buildUrlSet(urls));
+  return xmlResponse(buildUrlSet([...urls, ...agencyUrls]));
 }

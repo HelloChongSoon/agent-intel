@@ -856,6 +856,41 @@ export async function getAgencyMovements(agency: string, limit: number = 10): Pr
   return getCachedAgencyMovements(agency, limit);
 }
 
+export interface AgencyMovementPageResult {
+  rows: MovementRow[];
+  total: number;
+}
+
+export async function getAgencyMovementsPage(params: {
+  agency: string;
+  page?: number;
+  pageSize?: number;
+  type?: string;
+}): Promise<AgencyMovementPageResult> {
+  const supabase = getSupabase();
+  if (!supabase) return { rows: [], total: 0 };
+
+  const { data, error } = await supabase.rpc('get_agency_movements_page', {
+    agency_filter: params.agency,
+    type_filter: params.type || null,
+    page_num: params.page || 1,
+    page_size: params.pageSize || 25,
+  });
+
+  if (error) {
+    console.error('getAgencyMovementsPage failed:', error.message);
+    return { rows: [], total: 0 };
+  }
+
+  const rows = (data || []) as Array<MovementRow & { total_count: number }>;
+  return {
+    rows: rows.map(({ id, cea_number, agent_name, previous_agency, new_agency, date, type }) => ({
+      id, cea_number, agent_name, previous_agency, new_agency, date, type,
+    })),
+    total: rows.length > 0 ? Number(rows[0].total_count) : 0,
+  };
+}
+
 const getCachedAgencyPropertyMix = unstable_cache(
   async (agency: string): Promise<Array<{ propertyType: string; count: number }>> => {
     const supabase = getSupabase();

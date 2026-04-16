@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { getAgencySummary } from '@/lib/queries';
+import { getAgencySummary, getAgencyMovementsPage } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { formatCount, formatDateLabel, formatLabel, slugifySegment } from '@/lib/format';
 import { getRequestAbsoluteUrl } from '@/lib/site';
@@ -30,6 +30,9 @@ export default async function AgencyPage({ params }: Props) {
   const summary = await getAgencySummary(slug);
   if (!summary) notFound();
 
+  // Get actual total movement count (not just the 8-item preview)
+  const { total: totalMovements } = await getAgencyMovementsPage({ agency: summary.agency.name, page: 1, pageSize: 1 });
+
   const url = await getRequestAbsoluteUrl(`/agency/${slug}`);
   const schema = {
     '@context': 'https://schema.org',
@@ -42,7 +45,7 @@ export default async function AgencyPage({ params }: Props) {
     <div className="space-y-8 py-4">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <div>
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Leaderboard', href: '/leaderboard' }, { label: summary.agency.name }]} />
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Agencies', href: '/agencies' }, { label: summary.agency.name }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Agency</p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">{summary.agency.name}</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
@@ -60,8 +63,8 @@ export default async function AgencyPage({ params }: Props) {
           <div className="mt-3 text-3xl font-semibold text-zinc-100">{summary.year}</div>
         </div>
         <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Recent Movements</div>
-          <div className="mt-3 text-3xl font-semibold text-zinc-100">{formatCount(summary.recentMovements.length)}</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Total Movements</div>
+          <div className="mt-3 text-3xl font-semibold text-zinc-100">{formatCount(totalMovements)}</div>
         </div>
       </section>
 
@@ -105,7 +108,7 @@ export default async function AgencyPage({ params }: Props) {
       <section className="rounded-[28px] border border-zinc-800 bg-zinc-950/90 p-7">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-zinc-100">Latest activity</h2>
-          <Link href={`/movements?agency=${encodeURIComponent(summary.agency.name)}`} className="text-sm text-zinc-400 transition hover:text-zinc-100">View all &rarr;</Link>
+          <Link href={`/agency/${slug}/movements`} className="text-sm text-zinc-400 transition hover:text-zinc-100">View all &rarr;</Link>
         </div>
         {summary.recentMovements.length > 0 ? (
           <div className="mt-5 grid gap-3 md:grid-cols-2">

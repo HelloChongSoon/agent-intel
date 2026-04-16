@@ -1,7 +1,6 @@
 import SearchBar from '@/components/SearchBar';
 import RootHeroBackground from '@/components/RootHeroBackground';
 import HeroBlobCard from '@/components/HeroBlobCard';
-import LazyStarCursor from '@/components/LazyStarCursor';
 import { createPageMetadata } from '@/lib/seo';
 import { getAgencies, getAvailableLeaderboardYears, getLeaderboardFilterOptions, getMovements } from '@/lib/queries';
 import { formatDateLabel, formatLabel, slugifySegment } from '@/lib/format';
@@ -60,8 +59,7 @@ export default async function Home() {
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
           />
-          <LazyStarCursor />
-
+  
           {/* ── Hero ── */}
           <section>
             <HeroBlobCard>
@@ -192,7 +190,6 @@ export default async function Home() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
-        <LazyStarCursor />
 
         {/* ── Hero card with blob background ── */}
         <section>
