@@ -55,64 +55,72 @@ export default async function Home() {
       const intelUrl = getVariantSiteUrl('intel');
 
       return (
-        <div className="-mx-4 -mt-8 overflow-x-hidden sm:-mx-6 lg:-mx-8">
+        <div className="space-y-10 py-4">
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
           />
+          <LazyStarCursor />
 
           {/* ── Hero ── */}
-          <section className="relative min-h-[85vh] flex items-center overflow-hidden">
-            <RootHeroBackground />
+          <section>
+            <HeroBlobCard>
+              <div className="px-6 py-14 sm:px-10 sm:py-20 lg:px-14 lg:py-28">
+                {/* Intro pill */}
+                <div className="hero-fade-in hero-fade-in-d1 hero-pill-float relative inline-flex items-center gap-2.5 rounded-full border border-zinc-700/60 dark:border-zinc-700/60 bg-zinc-900/70 dark:bg-zinc-900/70 px-4 py-2 text-xs font-semibold text-zinc-300 backdrop-blur-sm hero-pill-border">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" style={{ animation: 'pulse 2s ease-in-out infinite' }} />
+                  Singapore Property Intelligence
+                </div>
 
-            <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
-              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 text-xs font-medium text-zinc-400 backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Singapore Property Intelligence
+                <h1 className="hero-fade-in hero-fade-in-d2 mt-7 max-w-4xl text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl md:text-[3.5rem] md:leading-[1.08] lg:text-[4.2rem]">
+                  <span className="block">Clearer data.</span>
+                  <span className="block mt-1 bg-gradient-to-r from-blue-400 via-sky-400 to-cyan-300 bg-clip-text text-transparent">
+                    Smarter choices.
+                  </span>
+                </h1>
+
+                <p className="hero-fade-in hero-fade-in-d3 mt-6 max-w-2xl text-sm text-zinc-400 sm:text-base sm:leading-7">
+                  PropNext builds property intelligence tools for Singapore consumers, starting with agent rankings, movement tracking, and structured profile data from official sources.
+                </p>
+
+                {/* Status badge */}
+                <div className="hero-fade-in hero-fade-in-d4 hero-badge-float mt-6 inline-flex items-center gap-2 rounded-full border border-zinc-800 dark:border-zinc-800 bg-zinc-900/60 dark:bg-zinc-900/60 px-3.5 py-1.5 text-xs text-zinc-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                  </span>
+                  Building in public · Based in Singapore
+                </div>
+
+                {/* CTAs */}
+                <div className="hero-fade-in hero-fade-in-d5 mt-10 flex flex-wrap gap-3">
+                  <Link
+                    href={intelUrl}
+                    className="group relative inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-500 hover:-translate-y-0.5"
+                  >
+                    Explore PropNext Intel
+                    <svg viewBox="0 0 16 16" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 8h10M9 4l4 4-4 4" />
+                    </svg>
+                  </Link>
+                  <Link
+                    href="/about"
+                    className="rounded-full border border-zinc-700 bg-zinc-900/40 px-6 py-3 text-sm font-semibold text-zinc-200 backdrop-blur-sm transition hover:border-zinc-500 hover:bg-zinc-900/60 hover:-translate-y-0.5"
+                  >
+                    About PropNext
+                  </Link>
+                </div>
               </div>
-
-              <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-zinc-50 sm:text-5xl md:text-7xl">
-                <span className="block">Clearer data.</span>
-                <span className="block mt-1 bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
-                  Smarter choices.
-                </span>
-              </h1>
-
-              <p className="mt-6 max-w-2xl text-base text-zinc-400 sm:text-lg sm:leading-8">
-                PropNext builds property intelligence tools for Singapore consumers, starting with agent rankings, movement tracking, and structured profile data from official sources.
-              </p>
-
-              <div className="mt-10 flex flex-wrap gap-4">
-                <Link
-                  href={intelUrl}
-                  className="group relative inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-6 py-3.5 text-sm font-medium text-zinc-950 transition hover:bg-white"
-                >
-                  Explore PropNext Intel
-                  <svg viewBox="0 0 16 16" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 8h10M9 4l4 4-4 4" />
-                  </svg>
-                </Link>
-                <Link
-                  href="/about"
-                  className="rounded-2xl border border-zinc-700 bg-zinc-900/40 px-6 py-3.5 text-sm font-medium text-zinc-100 backdrop-blur-sm transition hover:border-zinc-500 hover:bg-zinc-900/60"
-                >
-                  About PropNext
-                </Link>
-              </div>
-            </div>
+            </HeroBlobCard>
           </section>
 
           {/* ── Products ── */}
-          <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">Products</p>
-                <h2 className="mt-2 text-2xl font-semibold text-zinc-100 sm:text-3xl">What we&apos;re building</h2>
-              </div>
-            </div>
+          <section>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">Products</p>
+            <h2 className="mb-6 text-2xl font-semibold text-zinc-100 sm:text-3xl">What we&apos;re building</h2>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <Link href="/products/intel" className="group rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Link href="/products/intel" className="group rounded-[24px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/90 dark:bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80">
                   <svg viewBox="0 0 20 20" className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                     <rect x="2" y="10" width="3" height="8" rx="1" />
@@ -124,7 +132,7 @@ export default async function Home() {
                 <p className="mt-2 text-sm leading-6 text-zinc-400">Agent rankings, profiles, and movement tracking powered by official CEA and URA data.</p>
               </Link>
 
-              <Link href="/methodology" className="group rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
+              <Link href="/methodology" className="group rounded-[24px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/90 dark:bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80">
                   <svg viewBox="0 0 20 20" className="h-5 w-5 text-indigo-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                     <path d="M10 2v5M10 18v-5M2 10h5M18 10h-5" />
@@ -135,7 +143,7 @@ export default async function Home() {
                 <p className="mt-2 text-sm leading-6 text-zinc-400">How we calculate rankings, what the data means, and how consumers should interpret it.</p>
               </Link>
 
-              <Link href="/contact" className="group rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
+              <Link href="/contact" className="group rounded-[24px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/90 dark:bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80">
                   <svg viewBox="0 0 20 20" className="h-5 w-5 text-sky-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 4h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
@@ -149,20 +157,18 @@ export default async function Home() {
           </section>
 
           {/* ── Trust strip ── */}
-          <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[20px] border border-zinc-800 bg-zinc-950/60 p-6">
-                <div className="text-2xl font-semibold text-zinc-100">Official sources</div>
-                <p className="mt-2 text-sm text-zinc-400">Built on CEA registration records, URA transaction data, and data.gov.sg feeds.</p>
-              </div>
-              <div className="rounded-[20px] border border-zinc-800 bg-zinc-950/60 p-6">
-                <div className="text-2xl font-semibold text-zinc-100">Consumer-first</div>
-                <p className="mt-2 text-sm text-zinc-400">Designed for home buyers and sellers, not for agents or agencies.</p>
-              </div>
-              <div className="rounded-[20px] border border-zinc-800 bg-zinc-950/60 p-6">
-                <div className="text-2xl font-semibold text-zinc-100">Open methodology</div>
-                <p className="mt-2 text-sm text-zinc-400">Every ranking and metric links back to how it was calculated and where the data came from.</p>
-              </div>
+          <section className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-[20px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/60 dark:bg-zinc-950/60 p-6">
+              <div className="text-2xl font-semibold text-zinc-100">Official sources</div>
+              <p className="mt-2 text-sm text-zinc-400">Built on CEA registration records, URA transaction data, and data.gov.sg feeds.</p>
+            </div>
+            <div className="rounded-[20px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/60 dark:bg-zinc-950/60 p-6">
+              <div className="text-2xl font-semibold text-zinc-100">Consumer-first</div>
+              <p className="mt-2 text-sm text-zinc-400">Designed for home buyers and sellers, not for agents or agencies.</p>
+            </div>
+            <div className="rounded-[20px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/60 dark:bg-zinc-950/60 p-6">
+              <div className="text-2xl font-semibold text-zinc-100">Open methodology</div>
+              <p className="mt-2 text-sm text-zinc-400">Every ranking and metric links back to how it was calculated and where the data came from.</p>
             </div>
           </section>
         </div>
