@@ -42,7 +42,7 @@ export default async function AgencyPage({ params }: Props) {
     <div className="space-y-8 py-4">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <div>
-        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Agencies', href: '/leaderboard' }, { label: summary.agency.name }]} />
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Leaderboard', href: '/leaderboard' }, { label: summary.agency.name }]} />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Agency</p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl md:text-4xl">{summary.agency.name}</h1>
         <p className="mt-4 max-w-3xl text-lg text-zinc-400">
