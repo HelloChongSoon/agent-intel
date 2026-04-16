@@ -140,48 +140,46 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         />
       </div>
 
-      <section className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <h2 className="text-xl font-semibold text-zinc-100">Top agency pages</h2>
-          <p className="mt-2 text-sm text-zinc-500">Compare individual leaders inside the biggest agencies instead of relying on brand alone.</p>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {agencies.slice(0, 6).map((agencyOption) => (
-              <Link
-                key={agencyOption.name}
-                href={`/agency/${slugifySegment(agencyOption.name)}`}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-100"
-              >
-                {agencyOption.name}
-              </Link>
-            ))}
+      {/* ── Top 10 Chart ─────────────────────────────────── */}
+      {rows.length > 0 && page === 1 && (
+        <section className="mb-6 overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold text-zinc-100">Top 10 Agents by Transaction Volume</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              {year}{agency ? ` · ${agency}` : ''}{activePropertyType ? ` · ${formatLabel(activePropertyType)}` : ''}{activeTransactionType ? ` · ${formatLabel(activeTransactionType)}` : ''}
+            </p>
           </div>
-        </div>
-        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <h2 className="text-xl font-semibold text-zinc-100">Explore ranking slices</h2>
-          <p className="mt-2 text-sm text-zinc-500">These pages are easier to compare when your transaction is already specific.</p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {propertyTypes.slice(0, 5).map((propertyTypeValue) => (
-              <Link
-                key={propertyTypeValue}
-                href={`/property-type/${slugifySegment(propertyTypeValue)}`}
-                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
-              >
-                {formatLabel(propertyTypeValue)}
-              </Link>
-            ))}
-            {transactionTypes.slice(0, 4).map((transactionTypeValue) => (
-              <Link
-                key={transactionTypeValue}
-                href={`/transaction-type/${slugifySegment(transactionTypeValue)}`}
-                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
-              >
-                {formatLabel(transactionTypeValue)}
-              </Link>
-            ))}
+          <div className="space-y-2.5">
+            {rows.slice(0, 10).map((agent, i) => {
+              const maxTxn = rows[0].transactions;
+              const pct = maxTxn > 0 ? Math.round((agent.transactions / maxTxn) * 100) : 0;
+              return (
+                <div key={agent.cea_number} className="group flex items-center gap-3">
+                  <div className="w-6 shrink-0 text-right text-xs font-bold tabular-nums text-zinc-500">
+                    {agent.rank}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="relative h-8 overflow-hidden rounded-lg bg-zinc-800/40">
+                      <div
+                        className={`absolute inset-y-0 left-0 rounded-lg transition-all duration-500 ${i === 0 ? 'bg-gradient-to-r from-blue-600 to-cyan-400' : i < 3 ? 'bg-gradient-to-r from-blue-600/80 to-blue-400/60' : 'bg-blue-500/30'}`}
+                        style={{ width: `${Math.max(8, pct)}%` }}
+                      />
+                      <div className="relative z-10 flex h-full items-center justify-between px-3">
+                        <Link href={`/agent/${agent.cea_number}`} className="truncate text-xs font-medium text-zinc-100 transition hover:text-white">
+                          {agent.name}
+                        </Link>
+                        <span className="ml-2 shrink-0 text-xs font-bold tabular-nums text-zinc-200">{agent.transactions.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
+      {/* ── Agent Rankings Table ────────────────────────── */}
       <section className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
         <div className="border-b border-zinc-800 px-6 py-6 md:px-8">
           <div className="flex flex-col gap-1.5">
@@ -291,6 +289,49 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                 Next
               </Link>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Agency Pages + Ranking Slices ──────────────── */}
+      <section className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+          <h2 className="text-xl font-semibold text-zinc-100">Top agency pages</h2>
+          <p className="mt-2 text-sm text-zinc-500">Compare individual leaders inside the biggest agencies instead of relying on brand alone.</p>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {agencies.slice(0, 6).map((agencyOption) => (
+              <Link
+                key={agencyOption.name}
+                href={`/agency/${slugifySegment(agencyOption.name)}`}
+                className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-100"
+              >
+                {agencyOption.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
+          <h2 className="text-xl font-semibold text-zinc-100">Explore ranking slices</h2>
+          <p className="mt-2 text-sm text-zinc-500">These pages are easier to compare when your transaction is already specific.</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {propertyTypes.slice(0, 5).map((propertyTypeValue) => (
+              <Link
+                key={propertyTypeValue}
+                href={`/property-type/${slugifySegment(propertyTypeValue)}`}
+                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
+              >
+                {formatLabel(propertyTypeValue)}
+              </Link>
+            ))}
+            {transactionTypes.slice(0, 4).map((transactionTypeValue) => (
+              <Link
+                key={transactionTypeValue}
+                href={`/transaction-type/${slugifySegment(transactionTypeValue)}`}
+                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300 transition hover:border-zinc-700"
+              >
+                {formatLabel(transactionTypeValue)}
+              </Link>
+            ))}
           </div>
         </div>
       </section>
