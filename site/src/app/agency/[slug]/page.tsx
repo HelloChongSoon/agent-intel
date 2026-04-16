@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { getAgencySummary, getAgencyMovementsPage } from '@/lib/queries';
+import { getAgencySummary } from '@/lib/queries';
 import { createPageMetadata } from '@/lib/seo';
 import { formatCount, formatDateLabel, formatLabel, slugifySegment } from '@/lib/format';
 import { getRequestAbsoluteUrl } from '@/lib/site';
@@ -29,9 +29,6 @@ export default async function AgencyPage({ params }: Props) {
   const { slug } = await params;
   const summary = await getAgencySummary(slug);
   if (!summary) notFound();
-
-  // Get actual total movement count (not just the 8-item preview)
-  const { total: totalMovements } = await getAgencyMovementsPage({ agency: summary.agency.name, page: 1, pageSize: 1 });
 
   const url = await getRequestAbsoluteUrl(`/agency/${slug}`);
   const schema = {
@@ -63,8 +60,8 @@ export default async function AgencyPage({ params }: Props) {
           <div className="mt-3 text-3xl font-semibold text-zinc-100">{summary.year}</div>
         </div>
         <div className="rounded-[24px] border border-zinc-800 bg-zinc-950/90 p-6">
-          <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Total Movements</div>
-          <div className="mt-3 text-3xl font-semibold text-zinc-100">{formatCount(totalMovements)}</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-zinc-500">Recent Movements</div>
+          <div className="mt-3 text-3xl font-semibold text-zinc-100">{formatCount(summary.recentMovements.length)}+</div>
         </div>
       </section>
 
