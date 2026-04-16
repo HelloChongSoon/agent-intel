@@ -1,5 +1,7 @@
 import SearchBar from '@/components/SearchBar';
 import RootHeroBackground from '@/components/RootHeroBackground';
+import HeroBlobCard from '@/components/HeroBlobCard';
+import LazyStarCursor from '@/components/LazyStarCursor';
 import { createPageMetadata } from '@/lib/seo';
 import { getAgencies, getAvailableLeaderboardYears, getLeaderboardFilterOptions, getMovements } from '@/lib/queries';
 import { formatDateLabel, formatLabel, slugifySegment } from '@/lib/format';
@@ -173,18 +175,45 @@ export default async function Home() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black px-4 py-10 sm:rounded-[32px] sm:px-8 sm:py-16">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500 sm:mb-4 sm:text-sm">Singapore Property Intelligence</p>
-          <h1 className="mb-3 max-w-4xl text-3xl font-semibold tracking-tight text-zinc-50 sm:mb-4 sm:text-4xl md:text-6xl">PropNext Intel</h1>
-          <p className="max-w-3xl text-base text-zinc-400 sm:text-xl">
-            Singapore property agent rankings, profiles, and movement intelligence for consumers who want to compare agents with clearer data.
-          </p>
-          <div className="mt-5 max-w-3xl text-sm text-zinc-500">
-            Compare agent activity, specialization, and agency movement using public records and structured summaries that are easier to verify and use in a real decision.
-          </div>
-          <div className="mt-8">
-            <SearchBar />
-          </div>
+        <LazyStarCursor />
+
+        {/* ── Hero card with blob background ── */}
+        <section>
+          <HeroBlobCard>
+            <div className="px-6 py-14 sm:px-10 sm:py-20 lg:px-14 lg:py-24">
+              {/* Intro pill */}
+              <div className="hero-fade-in hero-fade-in-d1 hero-pill-float relative inline-flex items-center gap-2.5 rounded-full border border-zinc-700/60 dark:border-zinc-700/60 bg-zinc-900/70 dark:bg-zinc-900/70 px-4 py-2 text-xs font-semibold text-zinc-300 backdrop-blur-sm hero-pill-border">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" style={{ animation: 'pulse 2s ease-in-out infinite' }} />
+                Singapore Property Intelligence
+              </div>
+
+              <h1 className="hero-fade-in hero-fade-in-d2 mt-7 max-w-4xl text-3xl font-bold tracking-tight text-zinc-50 sm:text-4xl md:text-[3.5rem] md:leading-[1.08] lg:text-[4rem]">
+                Compare agents with{' '}
+                <span className="bg-gradient-to-r from-blue-400 via-sky-400 to-cyan-300 bg-clip-text text-transparent">
+                  clearer data
+                </span>
+              </h1>
+
+              <p className="hero-fade-in hero-fade-in-d3 mt-5 max-w-2xl text-sm text-zinc-400 sm:text-base sm:leading-7">
+                Rankings, profiles, and movement intelligence powered by official CEA and URA records.
+                Structured summaries that are easier to verify and use in a real decision.
+              </p>
+
+              {/* Status badge */}
+              <div className="hero-fade-in hero-fade-in-d4 hero-badge-float mt-6 inline-flex items-center gap-2 rounded-full border border-zinc-800 dark:border-zinc-800 bg-zinc-900/60 dark:bg-zinc-900/60 px-3.5 py-1.5 text-xs text-zinc-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                Updated with {coverageYear} transaction data
+              </div>
+
+              {/* Search bar */}
+              <div className="hero-fade-in hero-fade-in-d5 mt-8 max-w-xl">
+                <SearchBar />
+              </div>
+            </div>
+          </HeroBlobCard>
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">

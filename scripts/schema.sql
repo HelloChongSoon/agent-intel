@@ -43,6 +43,7 @@ CREATE INDEX idx_transactions_transaction_type ON transactions(transaction_type)
 CREATE INDEX idx_transactions_area ON transactions(area);
 CREATE INDEX idx_transactions_area_cea ON transactions(area, cea_number);
 CREATE INDEX idx_transactions_area_property ON transactions(area, property_type);
+CREATE INDEX idx_transactions_property_type_cea ON transactions(property_type, cea_number);
 
 -- Movements table
 CREATE TABLE movements (
@@ -170,6 +171,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Pre-computed area statistics (populated via batch script)
+CREATE TABLE area_stats (
+  area TEXT PRIMARY KEY,
+  agent_count BIGINT NOT NULL DEFAULT 0,
+  transaction_count BIGINT NOT NULL DEFAULT 0
+);
+
+ALTER TABLE area_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read" ON area_stats FOR SELECT TO anon, authenticated USING (true);
+
 -- Get agents active in an area (for comparable agents + area pages)
 CREATE OR REPLACE FUNCTION get_agents_by_area(
   area_filter TEXT,
@@ -177,21 +188,25 @@ CREATE OR REPLACE FUNCTION get_agents_by_area(
   result_limit INT DEFAULT 4
 )
 RETURNS TABLE(cea_number TEXT, name TEXT, agency TEXT, total_transactions INT, area_count BIGINT)
-LANGUAGE sql STABLE SECURITY DEFINER
+LANGUAGE plpgsql SECURITY DEFINER
 AS $$
-  SELECT
-    a.cea_number,
-    a.name,
-    a.agency,
-    a.total_transactions,
-    COUNT(*) AS area_count
-  FROM transactions t
-  JOIN agents a ON a.cea_number = t.cea_number
-  WHERE t.area = area_filter
-    AND (exclude_cea IS NULL OR t.cea_number != exclude_cea)
-  GROUP BY a.cea_number, a.name, a.agency, a.total_transactions
-  ORDER BY area_count DESC
-  LIMIT result_limit;
+BEGIN
+  SET LOCAL statement_timeout = '15s';
+  RETURN QUERY
+  WITH top_agents AS (
+    SELECT t.cea_number, COUNT(*) AS area_count
+    FROM transactions t
+    WHERE t.area = area_filter
+      AND t.cea_number != COALESCE(exclude_cea, '')
+    GROUP BY t.cea_number
+    ORDER BY area_count DESC
+    LIMIT result_limit
+  )
+  SELECT a.cea_number, a.name, a.agency, a.total_transactions, ta.area_count
+  FROM top_agents ta
+  JOIN agents a ON a.cea_number = ta.cea_number
+  ORDER BY ta.area_count DESC;
+END;
 $$;
 
 -- Get agents by property type (for comparable agents)
@@ -201,21 +216,25 @@ CREATE OR REPLACE FUNCTION get_agents_by_property_type(
   result_limit INT DEFAULT 4
 )
 RETURNS TABLE(cea_number TEXT, name TEXT, agency TEXT, total_transactions INT, type_count BIGINT)
-LANGUAGE sql STABLE SECURITY DEFINER
+LANGUAGE plpgsql SECURITY DEFINER
 AS $$
-  SELECT
-    a.cea_number,
-    a.name,
-    a.agency,
-    a.total_transactions,
-    COUNT(*) AS type_count
-  FROM transactions t
-  JOIN agents a ON a.cea_number = t.cea_number
-  WHERE t.property_type = property_type_filter
-    AND (exclude_cea IS NULL OR t.cea_number != exclude_cea)
-  GROUP BY a.cea_number, a.name, a.agency, a.total_transactions
-  ORDER BY type_count DESC
-  LIMIT result_limit;
+BEGIN
+  SET LOCAL statement_timeout = '15s';
+  RETURN QUERY
+  WITH top_agents AS (
+    SELECT t.cea_number, COUNT(*) AS type_count
+    FROM transactions t
+    WHERE t.property_type = property_type_filter
+      AND t.cea_number != COALESCE(exclude_cea, '')
+    GROUP BY t.cea_number
+    ORDER BY type_count DESC
+    LIMIT result_limit
+  )
+  SELECT a.cea_number, a.name, a.agency, a.total_transactions, ta.type_count
+  FROM top_agents ta
+  JOIN agents a ON a.cea_number = ta.cea_number
+  ORDER BY ta.type_count DESC;
+END;
 $$;
 
 -- Area leaderboard (agents ranked by transactions in an area)
@@ -231,61 +250,63 @@ RETURNS TABLE(cea_number TEXT, name TEXT, agency TEXT, transactions BIGINT, rank
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
+  SET LOCAL statement_timeout = '30s';
   RETURN QUERY
-  WITH ranked AS (
-    SELECT
-      a.cea_number,
-      a.name,
-      a.agency,
-      COUNT(t.id) AS transactions,
-      RANK() OVER (ORDER BY COUNT(t.id) DESC) AS rank
-    FROM agents a
-    JOIN transactions t ON t.cea_number = a.cea_number
+  WITH agent_txns AS (
+    SELECT t.cea_number, COUNT(*) AS transactions
+    FROM transactions t
     WHERE t.area = area_filter
       AND (year_filter IS NULL OR t.year = year_filter::SMALLINT)
-      AND (agency_filter IS NULL OR a.agency = agency_filter)
       AND (property_type_filter IS NULL OR t.property_type = property_type_filter)
-    GROUP BY a.cea_number, a.name, a.agency
-    HAVING COUNT(t.id) > 0
+    GROUP BY t.cea_number
+  ),
+  ranked AS (
+    SELECT at.cea_number, at.transactions,
+           RANK() OVER (ORDER BY at.transactions DESC) AS rank
+    FROM agent_txns at
+  ),
+  filtered AS (
+    SELECT r.cea_number, r.transactions, r.rank
+    FROM ranked r
+    JOIN agents a ON a.cea_number = r.cea_number
+    WHERE (agency_filter IS NULL OR a.agency = agency_filter)
   )
-  SELECT r.cea_number, r.name, r.agency, r.transactions, r.rank,
-    (SELECT COUNT(*) FROM ranked) AS total_count
-  FROM ranked r
-  ORDER BY r.rank ASC
+  SELECT f.cea_number, a.name, a.agency, f.transactions, f.rank,
+         (SELECT COUNT(*) FROM filtered)::BIGINT AS total_count
+  FROM filtered f
+  JOIN agents a ON a.cea_number = f.cea_number
+  ORDER BY f.rank ASC
   LIMIT page_size OFFSET (page_num - 1) * page_size;
 END;
 $$;
 
--- Distinct areas with agent counts (for sitemaps and validation)
+-- Distinct areas with agent counts (reads from pre-computed area_stats)
 CREATE OR REPLACE FUNCTION get_areas(min_agents INT DEFAULT 3)
 RETURNS TABLE(area TEXT, agent_count BIGINT)
 LANGUAGE sql STABLE SECURITY DEFINER
 AS $$
-  SELECT
-    t.area,
-    COUNT(DISTINCT t.cea_number) AS agent_count
-  FROM transactions t
-  WHERE t.area IS NOT NULL AND t.area != ''
-  GROUP BY t.area
-  HAVING COUNT(DISTINCT t.cea_number) >= min_agents
-  ORDER BY agent_count DESC;
+  SELECT s.area, s.agent_count
+  FROM area_stats s
+  WHERE s.agent_count >= min_agents
+  ORDER BY s.agent_count DESC;
 $$;
 
 -- Area + property type combos (for cross-dimensional sitemaps)
 CREATE OR REPLACE FUNCTION get_area_property_type_combos(min_agents INT DEFAULT 5)
 RETURNS TABLE(area TEXT, property_type TEXT, agent_count BIGINT)
-LANGUAGE sql STABLE SECURITY DEFINER
+LANGUAGE plpgsql SECURITY DEFINER
 AS $$
-  SELECT
-    t.area,
-    t.property_type,
-    COUNT(DISTINCT t.cea_number) AS agent_count
-  FROM transactions t
-  WHERE t.area IS NOT NULL AND t.area != ''
-    AND t.property_type IS NOT NULL AND t.property_type != ''
-  GROUP BY t.area, t.property_type
-  HAVING COUNT(DISTINCT t.cea_number) >= min_agents
-  ORDER BY agent_count DESC;
+BEGIN
+  SET LOCAL statement_timeout = '30s';
+  RETURN QUERY
+    SELECT t.area, t.property_type, COUNT(DISTINCT t.cea_number) AS agent_count
+    FROM transactions t
+    WHERE t.area IS NOT NULL AND t.area != ''
+      AND t.property_type IS NOT NULL AND t.property_type != ''
+    GROUP BY t.area, t.property_type
+    HAVING COUNT(DISTINCT t.cea_number) >= min_agents
+    ORDER BY agent_count DESC;
+END;
 $$;
 
 -- Row Level Security: public read, no public write

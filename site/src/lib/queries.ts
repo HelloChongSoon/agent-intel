@@ -234,14 +234,14 @@ const getCachedAvailableLeaderboardYears = unstable_cache(
     const supabase = getSupabase();
 
     if (!supabase) {
-      return [currentYear];
+      return [];
     }
 
     const { data, error } = await supabase.rpc('get_available_leaderboard_years');
 
     if (error) {
       console.error('getAvailableLeaderboardYears failed:', error.message);
-      return [currentYear];
+      return [];
     }
 
     const years = ((data || []) as Array<unknown>)
@@ -264,7 +264,7 @@ export async function getAvailableLeaderboardYears(minYear: number = 2017): Prom
 
   return filteredYears.length > 0
     ? filteredYears
-    : Array.from({ length: currentYear - minYear + 1 }, (_, i) => currentYear - i);
+    : Array.from({ length: Math.min(5, currentYear - minYear + 1) }, (_, i) => currentYear - i);
 }
 
 export async function getLatestLeaderboardYear(minYear: number = 2017): Promise<number> {
