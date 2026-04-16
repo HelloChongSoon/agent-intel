@@ -114,24 +114,35 @@ export default async function Home() {
             </HeroBlobCard>
           </section>
 
-          {/* ── Products ── */}
+          {/* ── Product ── */}
           <section>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">Products</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">Product</p>
             <h2 className="mb-6 text-2xl font-semibold text-zinc-100 sm:text-3xl">What we&apos;re building</h2>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <Link href="/products/intel" className="group rounded-[24px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/90 dark:bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80">
-                  <svg viewBox="0 0 20 20" className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                    <rect x="2" y="10" width="3" height="8" rx="1" />
-                    <rect x="8.5" y="6" width="3" height="12" rx="1" />
-                    <rect x="15" y="2" width="3" height="16" rx="1" />
-                  </svg>
-                </div>
+            <Link href="/products/intel" className="group flex flex-col gap-5 rounded-[24px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/90 dark:bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/80">
+                <svg viewBox="0 0 20 20" className="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                  <rect x="2" y="10" width="3" height="8" rx="1" />
+                  <rect x="8.5" y="6" width="3" height="12" rx="1" />
+                  <rect x="15" y="2" width="3" height="16" rx="1" />
+                </svg>
+              </div>
+              <div className="flex-1">
                 <h3 className="text-lg font-semibold text-zinc-100 transition group-hover:text-white">PropNext Intel</h3>
-                <p className="mt-2 text-sm leading-6 text-zinc-400">Agent rankings, profiles, and movement tracking powered by official CEA and URA data.</p>
-              </Link>
+                <p className="mt-1 text-sm leading-6 text-zinc-400">Agent rankings, profiles, and movement tracking powered by official CEA and URA data. Compare agent activity, specialization, and agency movements.</p>
+              </div>
+              <svg viewBox="0 0 16 16" className="hidden h-5 w-5 shrink-0 text-zinc-600 transition group-hover:text-zinc-300 group-hover:translate-x-1 sm:block" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 8h10M9 4l4 4-4 4" />
+              </svg>
+            </Link>
+          </section>
 
+          {/* ── Resources ── */}
+          <section>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">Resources</p>
+            <h2 className="mb-6 text-2xl font-semibold text-zinc-100 sm:text-3xl">Learn more</h2>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <Link href="/methodology" className="group rounded-[24px] border border-zinc-800 dark:border-zinc-800 bg-zinc-950/90 dark:bg-zinc-950/90 p-7 transition hover:border-zinc-700 hover:bg-zinc-900/60">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80">
                   <svg viewBox="0 0 20 20" className="h-5 w-5 text-indigo-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
