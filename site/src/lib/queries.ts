@@ -362,6 +362,7 @@ const getCachedLeaderboard = unstable_cache(
       transaction_type_filter: params.transactionType,
       page_num: params.page,
       page_size: params.pageSize,
+      top_pct: 1, // Only show top 1% of agents
     });
 
     if (error) {
@@ -369,8 +370,9 @@ const getCachedLeaderboard = unstable_cache(
       return { rows: [], total: 0, hasMore: false };
     }
 
-    const rows = (data || []) as Array<LeaderboardRow & { has_more?: boolean }>;
+    const rows = (data || []) as Array<LeaderboardRow & { has_more?: boolean; total_agents?: number }>;
     const hasMore = rows.length > 0 ? Boolean(rows[0].has_more) : false;
+    const totalAgents = rows.length > 0 ? Number(rows[0].total_agents || 0) : 0;
 
     return {
       rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
@@ -380,7 +382,7 @@ const getCachedLeaderboard = unstable_cache(
         agency,
         transactions,
       })),
-      total: 0,
+      total: totalAgents,
       hasMore,
     };
   },

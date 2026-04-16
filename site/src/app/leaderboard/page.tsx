@@ -59,7 +59,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const activePropertyType = propertyType && propertyTypes.includes(propertyType) ? propertyType : undefined;
   const activeTransactionType = transactionType && transactionTypes.includes(transactionType) ? transactionType : undefined;
 
-  const { rows, hasMore } = await getLeaderboard({
+  const { rows, hasMore, total: totalAgents } = await getLeaderboard({
     year,
     page,
     pageSize,
@@ -185,9 +185,12 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       <section className="overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950/90 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
         <div className="border-b border-zinc-800 px-6 py-6 md:px-8">
           <div className="flex flex-col gap-1.5">
-            <h2 className="text-xl font-semibold text-white">Agent Rankings</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-white">Agent Rankings</h2>
+              <span className="rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-blue-400">Top 1%</span>
+            </div>
             <p className="text-base text-zinc-400">
-              Top-ranked agents in {year}
+              Top 1% of {totalAgents > 0 ? totalAgents.toLocaleString() : ''} agents ranked by transactions in {year}
               {rows.length > 0 && <span> — showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()}</span>}
               {agency && <span> for {agency}</span>}
               {activePropertyType && <span> matching {activePropertyType.replaceAll('_', ' ')}</span>}
