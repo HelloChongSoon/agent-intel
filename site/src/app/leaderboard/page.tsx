@@ -195,14 +195,28 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold text-white">Agent Rankings</h2>
-              <span className="rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-blue-400">Top 1%</span>
+              {!agency && !activePropertyType && !activeTransactionType && (
+                <span className="rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-blue-400">Top 1%</span>
+              )}
             </div>
             <p className="text-base text-zinc-400">
-              Top 1% of {totalAgents > 0 ? totalAgents.toLocaleString() : ''} agents ranked by transactions in {year}
-              {rows.length > 0 && <span> — showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()}</span>}
-              {agency && <span> for {agency}</span>}
-              {activePropertyType && <span> matching {activePropertyType.replaceAll('_', ' ')}</span>}
-              {activeTransactionType && <span> via {activeTransactionType.replaceAll('_', ' ')}</span>}
+              {agency || activePropertyType || activeTransactionType ? (
+                <>
+                  Agents ranked by{' '}
+                  {[
+                    activePropertyType && formatLabel(activePropertyType),
+                    activeTransactionType && formatLabel(activeTransactionType),
+                  ].filter(Boolean).join(' · ') || ''}{' '}
+                  transactions in {year}
+                  {agency && <span> at {agency}</span>}
+                  {rows.length > 0 && <span> — showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()}</span>}
+                </>
+              ) : (
+                <>
+                  Top 1% of {totalAgents > 0 ? totalAgents.toLocaleString() : ''} registered agents ranked by transactions in {year}
+                  {rows.length > 0 && <span> — showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()}</span>}
+                </>
+              )}
             </p>
           </div>
         </div>
