@@ -10,6 +10,12 @@ export interface LeaderboardRow {
   transactions: number;
 }
 
+export interface LeaderboardPageResult {
+  rows: LeaderboardRow[];
+  total: number;
+  hasMore: boolean;
+}
+
 export interface LeaderboardFilterOptions {
   propertyTypes: string[];
   transactionTypes: string[];
@@ -345,14 +351,11 @@ const getCachedLeaderboard = unstable_cache(
     agency: string | null;
     propertyType: string | null;
     transactionType: string | null;
-  }): Promise<{ rows: LeaderboardRow[]; total: number }> => {
+  }): Promise<LeaderboardPageResult> => {
     const supabase = getSupabase();
-    if (!supabase) return { rows: [], total: 0 };
+    if (!supabase) return { rows: [], total: 0, hasMore: false };
 
-    const from = (params.page - 1) * params.pageSize;
-    const to = from + params.pageSize - 1;
-
-    const { data, error } = await supabase.rpc('get_leaderboard', {
+    const { data, error } = await supabase.rpc('get_leaderboard_page', {
       year_filter: String(params.year),
       agency_filter: params.agency,
       property_type_filter: params.propertyType,
@@ -363,46 +366,11 @@ const getCachedLeaderboard = unstable_cache(
 
     if (error) {
       console.error('getLeaderboard failed:', error.message);
-
-      if (error.message.includes('statement timeout')) {
-        let fallbackQuery = supabase
-          .from('agents')
-          .select('cea_number, name, agency, total_transactions', { count: 'exact' })
-          .gt('total_transactions', 0);
-
-        if (params.agency) {
-          fallbackQuery = fallbackQuery.eq('agency', params.agency);
-        }
-
-        const { data: fallbackData, count: fallbackCount, error: fallbackError } = await fallbackQuery
-          .order('total_transactions', { ascending: false })
-          .order('cea_number', { ascending: true })
-          .range(from, to);
-
-        if (fallbackError) {
-          console.error('getLeaderboard fallback failed:', fallbackError.message);
-          return { rows: [], total: 0 };
-        }
-
-        const fallbackRows: LeaderboardRow[] = (fallbackData || []).map((row, index) => ({
-          rank: from + index + 1,
-          name: row.name,
-          cea_number: row.cea_number,
-          agency: row.agency || '',
-          transactions: Number(row.total_transactions || 0),
-        }));
-
-        return {
-          rows: fallbackRows,
-          total: fallbackCount || 0,
-        };
-      }
-
-      return { rows: [], total: 0 };
+      return { rows: [], total: 0, hasMore: false };
     }
 
-    const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
-    const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+    const rows = (data || []) as Array<LeaderboardRow & { has_more?: boolean }>;
+    const hasMore = rows.length > 0 ? Boolean(rows[0].has_more) : false;
 
     return {
       rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
@@ -412,7 +380,8 @@ const getCachedLeaderboard = unstable_cache(
         agency,
         transactions,
       })),
-      total,
+      total: 0,
+      hasMore,
     };
   },
   ['leaderboard'],
@@ -426,7 +395,7 @@ export async function getLeaderboard(params: {
   agency?: string;
   propertyType?: string;
   transactionType?: string;
-}): Promise<{ rows: LeaderboardRow[]; total: number }> {
+}): Promise<LeaderboardPageResult> {
   return getCachedLeaderboard({
     year: params.year || new Date().getFullYear(),
     page: params.page || 1,

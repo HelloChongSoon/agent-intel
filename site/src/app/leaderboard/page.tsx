@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import LeaderboardFilters from '@/components/LeaderboardFilters';
-import LeaderboardPagination from '@/components/LeaderboardPagination';
 import LeaderboardAgentLink from '@/components/LeaderboardAgentLink';
 import {
   getAgencies,
@@ -60,7 +59,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const activePropertyType = propertyType && propertyTypes.includes(propertyType) ? propertyType : undefined;
   const activeTransactionType = transactionType && transactionTypes.includes(transactionType) ? transactionType : undefined;
 
-  const { rows, total } = await getLeaderboard({
+  const { rows, hasMore } = await getLeaderboard({
     year,
     page,
     pageSize,
@@ -68,14 +67,13 @@ export default async function LeaderboardPage({ searchParams }: Props) {
     propertyType: activePropertyType,
     transactionType: activeTransactionType,
   });
-  const totalPages = Math.ceil(total / pageSize);
 
   const filterParams: Record<string, string> = { year: String(year) };
   if (agency) filterParams.agency = agency;
   if (activePropertyType) filterParams.propertyType = activePropertyType;
   if (activeTransactionType) filterParams.transactionType = activeTransactionType;
-  const showingFrom = total === 0 ? 0 : ((page - 1) * pageSize) + 1;
-  const showingTo = total === 0 ? 0 : Math.min(page * pageSize, total);
+  const showingFrom = rows.length === 0 ? 0 : ((page - 1) * pageSize) + 1;
+  const showingTo = rows.length === 0 ? 0 : ((page - 1) * pageSize) + rows.length;
   const homeUrl = await getRequestAbsoluteUrl('/');
   const leaderboardUrl = await getRequestAbsoluteUrl('/leaderboard');
   const url = await getRequestAbsoluteUrl(`/leaderboard?${new URLSearchParams(filterParams).toString()}`);
@@ -189,7 +187,8 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           <div className="flex flex-col gap-1.5">
             <h2 className="text-xl font-semibold text-white">Agent Rankings</h2>
             <p className="text-base text-zinc-400">
-              Showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()} of {total.toLocaleString()} agents in {year}
+              Top-ranked agents in {year}
+              {rows.length > 0 && <span> — showing {showingFrom.toLocaleString()}-{showingTo.toLocaleString()}</span>}
               {agency && <span> for {agency}</span>}
               {activePropertyType && <span> matching {activePropertyType.replaceAll('_', ' ')}</span>}
               {activeTransactionType && <span> via {activeTransactionType.replaceAll('_', ' ')}</span>}
@@ -271,7 +270,25 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         </div>
 
         <div className="px-6 pb-8 pt-6 md:px-8">
-          <LeaderboardPagination currentPage={page} totalPages={totalPages} searchParams={filterParams} />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {page > 1 && (
+              <Link
+                href={`/leaderboard?${new URLSearchParams({ ...filterParams, page: String(page - 1) }).toString()}`}
+                className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
+              >
+                Previous
+              </Link>
+            )}
+            <span className="px-3 py-2 text-sm text-zinc-500">Page {page}</span>
+            {hasMore && (
+              <Link
+                href={`/leaderboard?${new URLSearchParams({ ...filterParams, page: String(page + 1) }).toString()}`}
+                className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-white"
+              >
+                Next
+              </Link>
+            )}
+          </div>
         </div>
       </section>
     </div>
