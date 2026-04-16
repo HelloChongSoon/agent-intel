@@ -355,6 +355,10 @@ const getCachedLeaderboard = unstable_cache(
     const supabase = getSupabase();
     if (!supabase) return { rows: [], total: 0, hasMore: false };
 
+    // Only cap at top 1% when no filters are active (the main leaderboard).
+    // When filters are set, show all matching agents.
+    const hasFilters = !!(params.agency || params.propertyType || params.transactionType);
+
     const { data, error } = await supabase.rpc('get_leaderboard_page', {
       year_filter: String(params.year),
       agency_filter: params.agency,
@@ -362,7 +366,7 @@ const getCachedLeaderboard = unstable_cache(
       transaction_type_filter: params.transactionType,
       page_num: params.page,
       page_size: params.pageSize,
-      top_pct: 1, // Only show top 1% of agents
+      top_pct: hasFilters ? 100 : 1,
     });
 
     if (error) {
