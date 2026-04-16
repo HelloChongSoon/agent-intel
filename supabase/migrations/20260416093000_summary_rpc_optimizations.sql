@@ -1,17 +1,7 @@
--- Summary RPC + index optimizations for PropNext Intel
+-- Summary RPC optimizations for PropNext Intel
 -- Focus: reduce request-time scans in agent, agency, leaderboard, search, and movements pages.
-
-CREATE INDEX IF NOT EXISTS idx_transactions_cea ON transactions(cea_number);
-CREATE INDEX IF NOT EXISTS idx_transactions_cea_year ON transactions(cea_number, year);
-CREATE INDEX IF NOT EXISTS idx_transactions_cea_date ON transactions(cea_number, date);
-CREATE INDEX IF NOT EXISTS idx_transactions_year_cea ON transactions(year, cea_number);
-CREATE INDEX IF NOT EXISTS idx_transactions_property_type ON transactions(property_type);
-CREATE INDEX IF NOT EXISTS idx_transactions_transaction_type ON transactions(transaction_type);
-CREATE INDEX IF NOT EXISTS idx_movements_cea_date ON movements(cea_number, date);
-CREATE INDEX IF NOT EXISTS idx_movements_type_date ON movements(type, date);
-CREATE INDEX IF NOT EXISTS idx_movements_previous_agency_date ON movements(previous_agency, date);
-CREATE INDEX IF NOT EXISTS idx_movements_new_agency_date ON movements(new_agency, date);
-CREATE INDEX IF NOT EXISTS idx_agents_agency ON agents(agency);
+-- Heavy index creation is intentionally kept out of this tracked migration so `supabase db push`
+-- can apply the RPCs without timing out. Run the companion manual SQL file after this lands.
 
 CREATE OR REPLACE FUNCTION transaction_year_from_text(raw_date TEXT)
 RETURNS SMALLINT
