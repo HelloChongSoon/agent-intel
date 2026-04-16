@@ -77,7 +77,13 @@ export default async function RootLayout({
         />
         <nav className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
-            <Link href="/" className="text-lg font-semibold tracking-tight text-zinc-50 sm:text-xl">
+            <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-50 sm:text-xl">
+              {/* Brand mark — abstract upward bars representing data intelligence */}
+              <svg viewBox="0 0 28 28" className="h-7 w-7 shrink-0" fill="none" aria-hidden="true">
+                <rect x="3" y="16" width="5" height="9" rx="1.5" className="fill-blue-500" />
+                <rect x="11.5" y="9" width="5" height="16" rx="1.5" className="fill-blue-400" />
+                <rect x="20" y="3" width="5" height="22" rx="1.5" className="fill-cyan-400" />
+              </svg>
               {context.isIntel ? 'PropNext Intel' : 'PropNext'}
             </Link>
             {/* Desktop nav */}
