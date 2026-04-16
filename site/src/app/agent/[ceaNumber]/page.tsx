@@ -382,13 +382,13 @@ export default async function AgentPage({ params, searchParams }: Props) {
   function getMovementBadge(type: string): { label: string; cls: string } {
     switch (type) {
       case 'new_registration':
-        return { label: 'New', cls: 'bg-emerald-500/10 text-emerald-400 dark:bg-emerald-500/10 dark:text-emerald-400' };
+        return { label: 'New', cls: 'bg-emerald-500/10 text-emerald-400' };
       case 'deregistration':
-        return { label: 'Left', cls: 'bg-rose-500/10 text-rose-400 dark:bg-rose-500/10 dark:text-rose-400' };
+        return { label: 'Left', cls: 'bg-rose-500/10 text-rose-400' };
       case 'reregistration':
-        return { label: 'Rejoined', cls: 'bg-sky-500/10 text-sky-400 dark:bg-sky-500/10 dark:text-sky-400' };
+        return { label: 'Rejoined', cls: 'bg-sky-500/10 text-sky-400' };
       default:
-        return { label: 'Transfer', cls: 'bg-amber-500/10 text-amber-400 dark:bg-amber-500/10 dark:text-amber-400' };
+        return { label: 'Transfer', cls: 'bg-amber-500/10 text-amber-400' };
     }
   }
 
@@ -407,11 +407,11 @@ export default async function AgentPage({ params, searchParams }: Props) {
       />
 
       {/* ── Hero ────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 sm:rounded-[28px]">
+      <div className="relative overflow-hidden rounded-2xl border border-zinc-800 sm:rounded-[28px]">
         {/* Accent gradient line */}
         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600" />
 
-        <div className="bg-gradient-to-br from-zinc-100 via-white to-zinc-50 px-5 pb-5 pt-6 dark:from-zinc-900 dark:via-zinc-950 dark:to-black sm:px-7 sm:pb-7 sm:pt-8">
+        <div className="bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-950 px-5 pb-5 pt-6 sm:px-7 sm:pb-7 sm:pt-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
@@ -420,7 +420,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
                   {agent.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
                 </div>
                 <div className="min-w-0">
-                  <h1 className="truncate text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-2xl md:text-3xl">
+                  <h1 className="truncate text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl md:text-3xl">
                     {agent.name}
                   </h1>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-zinc-500">
@@ -434,27 +434,27 @@ export default async function AgentPage({ params, searchParams }: Props) {
 
             <div className="flex gap-5 sm:shrink-0 sm:text-right">
               <div>
-                <div className="text-2xl font-bold tabular-nums text-zinc-900 dark:text-zinc-50 sm:text-3xl">{formatCount(totalTransactions)}</div>
+                <div className="text-2xl font-bold tabular-nums text-zinc-50 sm:text-3xl">{formatCount(totalTransactions)}</div>
                 <div className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-zinc-400">Transactions</div>
               </div>
-              <div className="border-l border-zinc-200 pl-5 dark:border-zinc-800">
-                <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{formatDateLabel(latestTransaction)}</div>
+              <div className="border-l border-zinc-800 pl-5">
+                <div className="text-sm font-medium text-zinc-200">{formatDateLabel(latestTransaction)}</div>
                 <div className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-zinc-400">Latest</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-px border-t border-zinc-200 bg-zinc-200 dark:border-zinc-800 dark:bg-zinc-800 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-px border-t border-zinc-800 bg-zinc-800 md:grid-cols-4">
           {[
             { label: 'Agency', value: agent.agency || '—' },
             { label: 'Phone', kind: 'phone' as const, contact: agent.phone },
             { label: 'Email', kind: 'email' as const, contact: agent.email },
             { label: 'Registration', value: `${formatDateLabel(agent.registration_start)} — ${formatDateLabel(agent.registration_end)}` },
           ].map((item) => (
-            <div key={item.label} className="bg-white px-4 py-3.5 dark:bg-zinc-950 sm:px-5">
+            <div key={item.label} className="bg-zinc-950 px-4 py-3.5 sm:px-5">
               <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">{item.label}</div>
-              <div className="mt-1 truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">
+              <div className="mt-1 truncate text-sm font-medium text-zinc-100">
                 {item.contact !== undefined ? <RevealContact kind={item.kind!} value={item.contact} /> : item.value}
               </div>
             </div>
@@ -465,10 +465,10 @@ export default async function AgentPage({ params, searchParams }: Props) {
       {/* ── Key Stats Row ───────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Transaction Snapshot */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
           <div className="flex items-start justify-between">
-            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Transaction Snapshot</div>
-            <div className="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold tabular-nums text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+            <div className="text-sm font-semibold text-zinc-100">Transaction Snapshot</div>
+            <div className="rounded-lg bg-blue-500/10 px-2.5 py-1 text-xs font-bold tabular-nums text-blue-400">
               {formatCount(totalTransactions)} total
             </div>
           </div>
@@ -476,10 +476,10 @@ export default async function AgentPage({ params, searchParams }: Props) {
             {topTransactionTypes.map(([type, count]) => {
               const pct = totalTransactions > 0 ? Math.round((count / totalTransactions) * 100) : 0;
               return (
-                <div key={type} className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/40">
+                <div key={type} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3">
                   <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">{formatLabel(type)}</div>
                   <div className="mt-1.5 flex items-baseline gap-1.5">
-                    <span className="text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(count)}</span>
+                    <span className="text-lg font-bold tabular-nums text-zinc-50">{formatCount(count)}</span>
                     <span className="text-[11px] text-zinc-400">{pct}%</span>
                   </div>
                 </div>
@@ -489,18 +489,18 @@ export default async function AgentPage({ params, searchParams }: Props) {
         </div>
 
         {/* Property Mix */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
-          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Property Mix</div>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
+          <div className="text-sm font-semibold text-zinc-100">Property Mix</div>
           <div className="mt-4 space-y-3">
             {topPropertyTypes.map(([type, count], i) => {
               const pct = totalTransactions > 0 ? Math.round((count / totalTransactions) * 100) : 0;
               return (
                 <div key={type}>
                   <div className="mb-1.5 flex items-baseline justify-between">
-                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">{formatLabel(type)}</span>
-                    <span className="text-xs tabular-nums text-zinc-400">{formatCount(count)} <span className="text-zinc-300 dark:text-zinc-600">({pct}%)</span></span>
+                    <span className="text-xs font-medium text-zinc-300">{formatLabel(type)}</span>
+                    <span className="text-xs tabular-nums text-zinc-400">{formatCount(count)} <span className="text-zinc-600">({pct}%)</span></span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                  <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
                     <div
                       className={`h-full rounded-full bg-gradient-to-r ${BAR_COLORS[i] || BAR_COLORS[BAR_COLORS.length - 1]}`}
                       style={{ width: `${Math.max(6, pct)}%` }}
@@ -514,13 +514,13 @@ export default async function AgentPage({ params, searchParams }: Props) {
 
         {/* Representation + Coverage */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
-            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Representation</div>
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
+            <div className="text-sm font-semibold text-zinc-100">Representation</div>
             <div className="mt-3 space-y-2.5">
               {topRoles.map(([role, count], i) => (
                 <div key={role} className="flex items-center gap-3">
                   <div className="w-20 shrink-0 text-xs font-medium text-zinc-500">{formatLabel(role)}</div>
-                  <div className="relative h-5 flex-1 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
+                  <div className="relative h-5 flex-1 overflow-hidden rounded-md bg-zinc-800">
                     <div
                       className={`absolute inset-y-0 left-0 rounded-md bg-gradient-to-r ${ROLE_COLORS[i] || ROLE_COLORS[ROLE_COLORS.length - 1]}`}
                       style={{ width: `${Math.max(8, Math.round((count / maxRole) * 100))}%` }}
@@ -534,20 +534,20 @@ export default async function AgentPage({ params, searchParams }: Props) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/90">
-            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Coverage</div>
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-4">
+            <div className="text-sm font-semibold text-zinc-100">Coverage</div>
             <div className="mt-3 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">Unique areas transacted in</span>
-                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(uniqueAreas)}</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-50">{formatCount(uniqueAreas)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">Property categories (e.g. HDB, Condo)</span>
-                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(filters.propertyTypes.length)}</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-50">{formatCount(filters.propertyTypes.length)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">Deal types (e.g. Resale, Rental)</span>
-                <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">{formatCount(filters.transactionTypes.length)}</span>
+                <span className="text-sm font-bold tabular-nums text-zinc-50">{formatCount(filters.transactionTypes.length)}</span>
               </div>
             </div>
           </div>
@@ -555,21 +555,21 @@ export default async function AgentPage({ params, searchParams }: Props) {
       </div>
 
       {/* ── 12-Month Activity ───────────────────────────────── */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">12-Month Activity</div>
+            <div className="text-sm font-semibold text-zinc-100">12-Month Activity</div>
             <div className="mt-0.5 text-xs text-zinc-400">Monthly transaction volume</div>
           </div>
           <div className="text-xs text-zinc-400">
-            Peak: <span className="font-bold text-zinc-700 dark:text-zinc-200">{formatCount(monthlyPeak)}</span>
+            Peak: <span className="font-bold text-zinc-200">{formatCount(monthlyPeak)}</span>
           </div>
         </div>
         {/* Grid lines */}
         <div className="relative mt-5">
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none" style={{ bottom: '32px' }}>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="border-t border-dashed border-zinc-100 dark:border-zinc-800/60" />
+              <div key={i} className="border-t border-dashed border-zinc-800/60" />
             ))}
           </div>
           <div className="relative grid grid-cols-12 items-end gap-1.5 sm:gap-2">
@@ -579,7 +579,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
                 <div key={bucket} className="flex flex-col items-center gap-1">
                   <div className="text-[10px] font-medium tabular-nums text-zinc-400 sm:text-[11px]">{count > 0 ? formatCount(count) : ''}</div>
                   <div
-                    className={`w-full rounded-t-md ${count > 0 ? 'bg-gradient-to-t from-blue-600 to-sky-400' : 'bg-zinc-100 dark:bg-zinc-800/40'}`}
+                    className={`w-full rounded-t-md ${count > 0 ? 'bg-gradient-to-t from-blue-600 to-sky-400' : 'bg-zinc-800/40'}`}
                     style={{ height: `${Math.max(4, height)}px`, minHeight: '4px' }}
                     aria-hidden="true"
                   />
@@ -595,10 +595,10 @@ export default async function AgentPage({ params, searchParams }: Props) {
 
       {/* ── Recent Deals by Area ────────────────────────────── */}
       {topRecentAreas.length > 0 && (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Active Areas</div>
+              <div className="text-sm font-semibold text-zinc-100">Active Areas</div>
               <div className="mt-0.5 text-xs text-zinc-400">Based on the latest 60 transactions</div>
             </div>
           </div>
@@ -606,12 +606,12 @@ export default async function AgentPage({ params, searchParams }: Props) {
             {topRecentAreas.map(([area, count], index) => (
               <div
                 key={area}
-                className="group inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 py-1.5 pl-1.5 pr-3.5 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-700"
+                className="group inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 py-1.5 pl-1.5 pr-3.5 transition hover:border-zinc-700"
               >
-                <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${index < 3 ? 'bg-gradient-to-br from-blue-600 to-sky-500' : 'bg-zinc-400 dark:bg-zinc-600'}`}>
+                <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${index < 3 ? 'bg-gradient-to-br from-blue-600 to-sky-500' : 'bg-zinc-600'}`}>
                   {index + 1}
                 </span>
-                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">{area}</span>
+                <span className="text-xs font-medium text-zinc-200">{area}</span>
                 <span className="text-[10px] tabular-nums text-zinc-400">{formatCount(count)}</span>
               </div>
             ))}
@@ -620,15 +620,15 @@ export default async function AgentPage({ params, searchParams }: Props) {
       )}
 
       {/* ── Movement History ─────────────────────────────────── */}
-      <section className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+      <section className="overflow-hidden rounded-2xl border border-zinc-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-900/40 px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Movement History</h2>
+            <h2 className="text-sm font-semibold text-zinc-100">Movement History</h2>
             <p className="mt-0.5 text-xs text-zinc-400">Agency transfers and registration events</p>
           </div>
           <Link
             href="/movements"
-            className="rounded-full bg-zinc-200/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-600 transition hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className="rounded-full bg-zinc-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-300 transition hover:bg-zinc-700"
           >
             View all
           </Link>
@@ -639,36 +639,36 @@ export default async function AgentPage({ params, searchParams }: Props) {
             <div className="hidden md:block">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-zinc-100 bg-white dark:border-zinc-800/60 dark:bg-zinc-950">
+                  <tr className="border-b border-zinc-800/60 bg-zinc-950">
                     <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Date</th>
                     <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Type</th>
                     <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">From</th>
                     <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Destination</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 bg-white dark:divide-zinc-800/40 dark:bg-zinc-950/80">
+                <tbody className="divide-y divide-zinc-800/40 bg-zinc-950/80">
                   {agentMovements.map((movement) => {
                     const movementColumns = getMovementColumns(movement);
                     const badge = getMovementBadge(movement.type);
 
                     return (
-                      <tr key={movement.id} className="transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+                      <tr key={movement.id} className="transition hover:bg-zinc-900/40">
                         <td className="px-5 py-3 text-xs tabular-nums text-zinc-500">{formatDateLabel(movement.date)}</td>
                         <td className="px-5 py-3">
                           <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${badge.cls}`}>
                             {badge.label}
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-xs text-zinc-700 dark:text-zinc-200">
+                        <td className="px-5 py-3 text-xs text-zinc-200">
                           {movementColumns.from.agencySlug ? (
-                            <Link href={`/agency/${movementColumns.from.agencySlug}`} className="transition hover:text-blue-600 dark:hover:text-blue-400">
+                            <Link href={`/agency/${movementColumns.from.agencySlug}`} className="transition hover:text-blue-400">
                               {movementColumns.from.label}
                             </Link>
                           ) : movementColumns.from.label}
                         </td>
-                        <td className="px-5 py-3 text-xs font-medium text-zinc-800 dark:text-zinc-100">
+                        <td className="px-5 py-3 text-xs font-medium text-zinc-100">
                           {movementColumns.to.agencySlug ? (
-                            <Link href={`/agency/${movementColumns.to.agencySlug}`} className="text-blue-600 transition hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                            <Link href={`/agency/${movementColumns.to.agencySlug}`} className="text-blue-400 transition hover:text-blue-300">
                               {movementColumns.to.label}
                             </Link>
                           ) : movementColumns.to.label}
@@ -680,13 +680,13 @@ export default async function AgentPage({ params, searchParams }: Props) {
               </table>
             </div>
 
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/40 md:hidden">
+            <div className="divide-y divide-zinc-800/40 md:hidden">
               {agentMovements.map((movement) => {
                 const movementColumns = getMovementColumns(movement);
                 const badge = getMovementBadge(movement.type);
 
                 return (
-                  <div key={movement.id} className="bg-white px-4 py-3.5 dark:bg-zinc-950/80">
+                  <div key={movement.id} className="bg-zinc-950/80 px-4 py-3.5">
                     <div className="flex items-center justify-between gap-3">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${badge.cls}`}>
                         {badge.label}
@@ -695,12 +695,12 @@ export default async function AgentPage({ params, searchParams }: Props) {
                     </div>
                     <div className="mt-2 text-xs text-zinc-500">
                       {movementColumns.from.agencySlug ? (
-                        <Link href={`/agency/${movementColumns.from.agencySlug}`} className="text-zinc-700 transition hover:text-blue-600 dark:text-zinc-200 dark:hover:text-blue-400">{movementColumns.from.label}</Link>
-                      ) : <span className="text-zinc-700 dark:text-zinc-200">{movementColumns.from.label}</span>}
-                      {' '}<span className="text-zinc-300 dark:text-zinc-600">&rarr;</span>{' '}
+                        <Link href={`/agency/${movementColumns.from.agencySlug}`} className="text-zinc-200 transition hover:text-blue-400">{movementColumns.from.label}</Link>
+                      ) : <span className="text-zinc-200">{movementColumns.from.label}</span>}
+                      {' '}<span className="text-zinc-600">&rarr;</span>{' '}
                       {movementColumns.to.agencySlug ? (
-                        <Link href={`/agency/${movementColumns.to.agencySlug}`} className="font-medium text-blue-600 dark:text-blue-400">{movementColumns.to.label}</Link>
-                      ) : <span className="font-medium text-zinc-800 dark:text-zinc-100">{movementColumns.to.label}</span>}
+                        <Link href={`/agency/${movementColumns.to.agencySlug}`} className="font-medium text-blue-400">{movementColumns.to.label}</Link>
+                      ) : <span className="font-medium text-zinc-100">{movementColumns.to.label}</span>}
                     </div>
                   </div>
                 );
@@ -708,8 +708,8 @@ export default async function AgentPage({ params, searchParams }: Props) {
             </div>
           </>
         ) : (
-          <div className="flex min-h-[180px] flex-col items-center justify-center bg-white px-6 py-10 text-center dark:bg-zinc-950/80">
-            <svg className="h-8 w-8 text-zinc-300 dark:text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+          <div className="flex min-h-[180px] flex-col items-center justify-center bg-zinc-950/80 px-6 py-10 text-center">
+            <svg className="h-8 w-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
             <p className="mt-3 text-sm text-zinc-400">No movement history recorded</p>
             <p className="mt-1 max-w-xs text-xs text-zinc-400/70">Agency transfers and registration events will appear here when available.</p>
           </div>
@@ -717,11 +717,11 @@ export default async function AgentPage({ params, searchParams }: Props) {
       </section>
 
       {/* ── Transaction History ──────────────────────────────── */}
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <div className="border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+      <div className="overflow-hidden rounded-2xl border border-zinc-800">
+        <div className="border-b border-zinc-800 bg-zinc-900/40 px-5 py-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Transaction History</h2>
+              <h2 className="text-sm font-semibold text-zinc-100">Transaction History</h2>
               <p className="mt-0.5 text-xs text-zinc-400">
                 {transactionPage.total === 0 ? '0' : `${startIndex + 1}–${endIndex}`} of {formatCount(transactionPage.total)} records
               </p>
@@ -748,7 +748,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
                       ...(group.param !== 'txYear' && selectedYear ? { txYear: selectedYear } : {}),
                       ...(group.param !== 'txMonth' && selectedMonth ? { txMonth: selectedMonth } : {}),
                     })}
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${!group.selected ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${!group.selected ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
                   >
                     All
                   </Link>
@@ -762,7 +762,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
                         ...(group.param === 'txYear' ? { txYear: value } : selectedYear ? { txYear: selectedYear } : {}),
                         ...(group.param !== 'txMonth' && selectedMonth ? { txMonth: selectedMonth } : {}),
                       })}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${group.selected === value ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${group.selected === value ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
                     >
                       {group.param === 'txYear' ? value : formatLabel(value)}
                     </Link>
@@ -780,7 +780,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
                     ...(selectedRole ? { role: selectedRole } : {}),
                     ...(selectedYear ? { txYear: selectedYear } : {}),
                   })}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${!selectedMonth ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${!selectedMonth ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
                 >
                   All
                 </Link>
@@ -794,7 +794,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
                       ...(selectedYear ? { txYear: selectedYear } : {}),
                       txMonth: option.value,
                     })}
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${selectedMonth === option.value ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${selectedMonth === option.value ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
                   >
                     {option.label}
                   </Link>
@@ -807,8 +807,8 @@ export default async function AgentPage({ params, searchParams }: Props) {
         <div className="hidden md:block">
           <div className="max-h-[900px] overflow-auto">
             <table className="w-full">
-              <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-950">
-                <tr className="border-b border-zinc-100 dark:border-zinc-800">
+              <thead className="sticky top-0 z-10 bg-zinc-950">
+                <tr className="border-b border-zinc-800">
                   <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Date</th>
                   <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Property</th>
                   <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Type</th>
@@ -817,14 +817,14 @@ export default async function AgentPage({ params, searchParams }: Props) {
                   <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Location</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800/40">
+              <tbody className="divide-y divide-zinc-800/40">
                 {paginatedTransactions.map((tx, i) => {
                   const { district, area } = splitLocation(tx.location);
                   return (
-                    <tr key={i} className="bg-white transition hover:bg-zinc-50 dark:bg-zinc-950/80 dark:hover:bg-zinc-900/40">
+                    <tr key={i} className="bg-zinc-950/80 transition hover:bg-zinc-900/40">
                       <td className="px-5 py-2.5 text-xs tabular-nums text-zinc-500">{formatDateLabel(tx.date)}</td>
-                      <td className="px-5 py-2.5 text-xs font-medium text-zinc-700 dark:text-zinc-200">{formatLabel(tx.property_type)}</td>
-                      <td className="px-5 py-2.5 text-xs text-zinc-600 dark:text-zinc-300">{formatLabel(tx.transaction_type)}</td>
+                      <td className="px-5 py-2.5 text-xs font-medium text-zinc-200">{formatLabel(tx.property_type)}</td>
+                      <td className="px-5 py-2.5 text-xs text-zinc-300">{formatLabel(tx.transaction_type)}</td>
                       <td className="px-5 py-2.5 text-xs text-zinc-500">{formatLabel(tx.role)}</td>
                       <td className="px-5 py-2.5 text-xs tabular-nums text-zinc-500">{district}</td>
                       <td className="px-5 py-2.5 text-xs text-zinc-400">{area}</td>
@@ -836,24 +836,24 @@ export default async function AgentPage({ params, searchParams }: Props) {
           </div>
         </div>
 
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-800/40 md:hidden">
+        <div className="divide-y divide-zinc-800/40 md:hidden">
           {paginatedTransactions.map((tx, i) => {
             const { district, area } = splitLocation(tx.location);
             return (
-              <div key={i} className="bg-white px-4 py-3 dark:bg-zinc-950/80">
+              <div key={i} className="bg-zinc-950/80 px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-xs font-medium text-zinc-800 dark:text-zinc-100">{formatLabel(tx.transaction_type)}</div>
+                    <div className="text-xs font-medium text-zinc-100">{formatLabel(tx.transaction_type)}</div>
                     <div className="mt-0.5 text-[11px] tabular-nums text-zinc-400">{formatDateLabel(tx.date)}</div>
                   </div>
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                  <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold text-zinc-400">
                     {formatLabel(tx.role)}
                   </span>
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
                   <div>
                     <div className="font-medium uppercase tracking-wider text-zinc-400">Property</div>
-                    <div className="mt-0.5 text-zinc-600 dark:text-zinc-300">{formatLabel(tx.property_type)}</div>
+                    <div className="mt-0.5 text-zinc-300">{formatLabel(tx.property_type)}</div>
                   </div>
                   <div>
                     <div className="font-medium uppercase tracking-wider text-zinc-400">D{district}</div>
@@ -866,7 +866,7 @@ export default async function AgentPage({ params, searchParams }: Props) {
         </div>
 
         {transactionPage.total > pageSize && (
-          <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <div className="border-t border-zinc-800 px-5 py-4">
             <Pagination
               currentPage={safeCurrentPage}
               totalPages={totalPages}
@@ -880,27 +880,27 @@ export default async function AgentPage({ params, searchParams }: Props) {
 
       {/* ── Insights + Comparable Agents ─────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
-          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">What this means</h2>
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
+          <h2 className="text-sm font-semibold text-zinc-100">What this means</h2>
           <p className="mt-2 text-xs leading-5 text-zinc-500">
             Use this page to check whether the agent&apos;s visible activity aligns with the property segment and role you need. Fit and recency matter more than volume.
           </p>
           <div className="mt-4 flex flex-wrap gap-1.5">
             {topPropertyTypes.slice(0, 3).map(([type]) => (
               <Link key={type} href={`/property-type/${slugifySegment(type)}`}
-                className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
+                className="rounded-full bg-zinc-800 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition hover:bg-zinc-700">
                 {formatLabel(type)}
               </Link>
             ))}
             {topTransactionTypes.slice(0, 2).map(([type]) => (
               <Link key={type} href={`/transaction-type/${slugifySegment(type)}`}
-                className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
+                className="rounded-full bg-zinc-800 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition hover:bg-zinc-700">
                 {formatLabel(type)}
               </Link>
             ))}
             {agent.agency && (
               <Link href={`/agency/${slugifySegment(agent.agency)}`}
-                className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
+                className="rounded-full bg-zinc-800 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition hover:bg-zinc-700">
                 {agent.agency}
               </Link>
             )}
@@ -908,21 +908,21 @@ export default async function AgentPage({ params, searchParams }: Props) {
         </section>
 
         {similarVolumeAgents.length > 0 && (
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
-            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Similar transaction volume</h2>
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
+            <h2 className="text-sm font-semibold text-zinc-100">Similar transaction volume</h2>
             <p className="mt-1 text-xs text-zinc-400">Agents with comparable transaction counts</p>
             <div className="mt-3 space-y-2">
               {similarVolumeAgents.map((comparable) => (
                 <Link key={comparable.cea_number} href={`/agent/${comparable.cea_number}`}
-                  className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-2.5 transition hover:border-zinc-200 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-zinc-700">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                  className="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-3.5 py-2.5 transition hover:border-zinc-700">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-[10px] font-bold text-zinc-300">
                     {comparable.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{comparable.name}</div>
+                    <div className="truncate text-xs font-medium text-zinc-100">{comparable.name}</div>
                     <div className="text-[11px] text-zinc-400">{comparable.agency || 'Independent'}</div>
                   </div>
-                  <div className="text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{formatCount(comparable.total_transactions || 0)}</div>
+                  <div className="text-xs font-bold tabular-nums text-zinc-300">{formatCount(comparable.total_transactions || 0)}</div>
                 </Link>
               ))}
             </div>
@@ -930,30 +930,30 @@ export default async function AgentPage({ params, searchParams }: Props) {
         )}
 
         {sameAreaAgents.length > 0 && topArea && (
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Active in {topArea}</h2>
+                <h2 className="text-sm font-semibold text-zinc-100">Active in {topArea}</h2>
                 <p className="mt-1 text-xs text-zinc-400">Other agents frequently transacting here</p>
               </div>
               <Link href={`/area/${slugifySegment(topArea)}`}
-                className="shrink-0 text-[11px] font-semibold text-blue-600 transition hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                className="shrink-0 text-[11px] font-semibold text-blue-400 transition hover:text-blue-300">
                 View all &rarr;
               </Link>
             </div>
             <div className="mt-3 space-y-2">
               {sameAreaAgents.map((comparable) => (
                 <Link key={comparable.cea_number} href={`/agent/${comparable.cea_number}`}
-                  className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-2.5 transition hover:border-zinc-200 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-zinc-700">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                  className="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-3.5 py-2.5 transition hover:border-zinc-700">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-bold text-emerald-400">
                     {comparable.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{comparable.name}</div>
+                    <div className="truncate text-xs font-medium text-zinc-100">{comparable.name}</div>
                     <div className="text-[11px] text-zinc-400">{comparable.agency || 'Independent'}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{formatCount(comparable.area_count)}</div>
+                    <div className="text-xs font-bold tabular-nums text-zinc-300">{formatCount(comparable.area_count)}</div>
                     <div className="text-[10px] text-zinc-400">in area</div>
                   </div>
                 </Link>
@@ -963,30 +963,30 @@ export default async function AgentPage({ params, searchParams }: Props) {
         )}
 
         {samePropertyTypeAgents.length > 0 && topPropertyType && (
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{formatLabel(topPropertyType)} specialists</h2>
+                <h2 className="text-sm font-semibold text-zinc-100">{formatLabel(topPropertyType)} specialists</h2>
                 <p className="mt-1 text-xs text-zinc-400">Agents focused on {formatLabel(topPropertyType).toLowerCase()} properties</p>
               </div>
               <Link href={`/property-type/${slugifySegment(topPropertyType)}`}
-                className="shrink-0 text-[11px] font-semibold text-blue-600 transition hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                className="shrink-0 text-[11px] font-semibold text-blue-400 transition hover:text-blue-300">
                 View all &rarr;
               </Link>
             </div>
             <div className="mt-3 space-y-2">
               {samePropertyTypeAgents.map((comparable) => (
                 <Link key={comparable.cea_number} href={`/agent/${comparable.cea_number}`}
-                  className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-2.5 transition hover:border-zinc-200 dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-zinc-700">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[10px] font-bold text-violet-700 dark:bg-violet-500/10 dark:text-violet-400">
+                  className="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-3.5 py-2.5 transition hover:border-zinc-700">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-[10px] font-bold text-violet-400">
                     {comparable.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{comparable.name}</div>
+                    <div className="truncate text-xs font-medium text-zinc-100">{comparable.name}</div>
                     <div className="text-[11px] text-zinc-400">{comparable.agency || 'Independent'}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs font-bold tabular-nums text-zinc-600 dark:text-zinc-300">{formatCount(comparable.type_count)}</div>
+                    <div className="text-xs font-bold tabular-nums text-zinc-300">{formatCount(comparable.type_count)}</div>
                     <div className="text-[10px] text-zinc-400">{formatLabel(topPropertyType).toLowerCase()}</div>
                   </div>
                 </Link>
