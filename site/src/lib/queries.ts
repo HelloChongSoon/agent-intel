@@ -423,17 +423,27 @@ export interface AgentRow {
   total_transactions: number;
 }
 
-export async function getAgent(ceaNumber: string): Promise<AgentRow | null> {
-  const supabase = await getSupabase();
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('agents')
-    .select('*')
-    .eq('cea_number', ceaNumber)
-    .single();
+const getCachedAgent = unstable_cache(
+  async (ceaNumber: string): Promise<AgentRow | null> => {
+    const supabase = await getSupabase();
+    if (!supabase) return null;
+    const { data, error } = await supabase
+      .from('agents')
+      .select(
+        'cea_number, name, agency, phone, email, registration_start, registration_end, total_transactions'
+      )
+      .eq('cea_number', ceaNumber)
+      .single();
 
-  if (error) return null;
-  return data as AgentRow;
+    if (error) return null;
+    return data as AgentRow;
+  },
+  ['agent'],
+  { revalidate: 600 }
+);
+
+export async function getAgent(ceaNumber: string): Promise<AgentRow | null> {
+  return getCachedAgent(ceaNumber);
 }
 
 export interface TransactionRow {
@@ -546,6 +556,53 @@ export async function getAgentTransactionFilters(
   return getCachedAgentTransactionFilters(ceaNumber, year ? String(year) : null);
 }
 
+const getCachedAgentTransactionsPage = unstable_cache(
+  async (params: {
+    ceaNumber: string;
+    page: number;
+    pageSize: number;
+    propertyType: string | null;
+    transactionType: string | null;
+    role: string | null;
+    year: string | null;
+    monthIndex: number | null;
+  }): Promise<AgentTransactionPageResult> => {
+    const supabase = getSupabase();
+    if (!supabase) return { rows: [], total: 0 };
+
+    const { data, error } = await supabase.rpc('get_agent_transactions_page', {
+      target_cea: params.ceaNumber,
+      property_type_filter: params.propertyType,
+      transaction_type_filter: params.transactionType,
+      role_filter: params.role,
+      year_filter: params.year,
+      month_filter: params.monthIndex,
+      page_num: params.page,
+      page_size: params.pageSize,
+    });
+
+    if (error) {
+      console.error('getAgentTransactionsPage failed:', error.message);
+      return { rows: [], total: 0 };
+    }
+
+    const rows = (data || []) as Array<TransactionRow & { total_count: number }>;
+
+    return {
+      rows: rows.map(({ date, property_type, transaction_type, role, location }) => ({
+        date,
+        property_type,
+        transaction_type,
+        role,
+        location,
+      })),
+      total: rows.length > 0 ? Number(rows[0].total_count) : 0,
+    };
+  },
+  ['agent-transaction-page'],
+  { revalidate: 300 }
+);
+
 export async function getAgentTransactionsPage(params: {
   ceaNumber: string;
   page?: number;
@@ -556,40 +613,19 @@ export async function getAgentTransactionsPage(params: {
   year?: number | string | null;
   monthIndex?: number | string | null;
 }): Promise<AgentTransactionPageResult> {
-  const supabase = getSupabase();
-  if (!supabase) return { rows: [], total: 0 };
-
-  const { data, error } = await supabase.rpc('get_agent_transactions_page', {
-    target_cea: params.ceaNumber,
-    property_type_filter: params.propertyType || null,
-    transaction_type_filter: params.transactionType || null,
-    role_filter: params.role || null,
-    year_filter: params.year ? String(params.year) : null,
-    month_filter:
+  return getCachedAgentTransactionsPage({
+    ceaNumber: params.ceaNumber,
+    page: params.page || 1,
+    pageSize: params.pageSize || 25,
+    propertyType: params.propertyType || null,
+    transactionType: params.transactionType || null,
+    role: params.role || null,
+    year: params.year ? String(params.year) : null,
+    monthIndex:
       params.monthIndex === null || params.monthIndex === undefined || params.monthIndex === ''
         ? null
         : Number(params.monthIndex),
-    page_num: params.page || 1,
-    page_size: params.pageSize || 25,
   });
-
-  if (error) {
-    console.error('getAgentTransactionsPage failed:', error.message);
-    return { rows: [], total: 0 };
-  }
-
-  const rows = (data || []) as Array<TransactionRow & { total_count: number }>;
-
-  return {
-    rows: rows.map(({ date, property_type, transaction_type, role, location }) => ({
-      date,
-      property_type,
-      transaction_type,
-      role,
-      location,
-    })),
-    total: rows.length > 0 ? Number(rows[0].total_count) : 0,
-  };
 }
 
 export interface MovementRow {
@@ -725,23 +761,31 @@ export async function getMovementInsights(weeks: number = 10): Promise<MovementI
   return getCachedMovementInsights(weeks);
 }
 
+const getCachedAgentMovements = unstable_cache(
+  async (ceaNumber: string, limit: number): Promise<MovementRow[]> => {
+    const supabase = getSupabase();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+      .from('movements')
+      .select('*')
+      .eq('cea_number', ceaNumber)
+      .order('date', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('getAgentMovements failed:', error.message);
+      return [];
+    }
+
+    return (data || []) as MovementRow[];
+  },
+  ['agent-movements'],
+  { revalidate: 600 }
+);
+
 export async function getAgentMovements(ceaNumber: string, limit: number = 10): Promise<MovementRow[]> {
-  const supabase = getSupabase();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase
-    .from('movements')
-    .select('*')
-    .eq('cea_number', ceaNumber)
-    .order('date', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error('getAgentMovements failed:', error.message);
-    return [];
-  }
-
-  return (data || []) as MovementRow[];
+  return getCachedAgentMovements(ceaNumber, limit);
 }
 
 export async function searchAgents(query: string, limit: number = 50): Promise<SearchAgentResult[]> {
@@ -989,108 +1033,161 @@ export async function getComparableAgents(params: {
   return (data || []) as AgentRow[];
 }
 
+const getCachedSimilarVolumeAgents = unstable_cache(
+  async (params: {
+    ceaNumber: string;
+    totalTransactions: number;
+    limit: number;
+  }): Promise<AgentRow[]> => {
+    const supabase = await getSupabase();
+    if (!supabase) return [];
+
+    const spread = Math.max(params.totalTransactions * 0.3, 5);
+    const lowerBound = Math.max(0, Math.floor(params.totalTransactions - spread));
+    const upperBound = Math.ceil(params.totalTransactions + spread);
+
+    const { data, error } = await supabase
+      .from('agents')
+      .select(
+        'cea_number, name, agency, phone, email, registration_start, registration_end, total_transactions'
+      )
+      .neq('cea_number', params.ceaNumber)
+      .gte('total_transactions', lowerBound)
+      .lte('total_transactions', upperBound)
+      .order('total_transactions', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('getSimilarVolumeAgents failed:', error.message);
+      return [];
+    }
+
+    const target = params.totalTransactions;
+    return ((data || []) as AgentRow[])
+      .sort(
+        (a, b) =>
+          Math.abs((a.total_transactions || 0) - target) - Math.abs((b.total_transactions || 0) - target)
+      )
+      .slice(0, params.limit);
+  },
+  ['similar-volume-agents'],
+  { revalidate: 600 }
+);
+
 export async function getSimilarVolumeAgents(params: {
   ceaNumber: string;
   totalTransactions: number;
   limit?: number;
 }): Promise<AgentRow[]> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
-
-  const spread = Math.max(params.totalTransactions * 0.3, 5);
-  const lowerBound = Math.max(0, Math.floor(params.totalTransactions - spread));
-  const upperBound = Math.ceil(params.totalTransactions + spread);
-
-  const { data, error } = await supabase
-    .from('agents')
-    .select('*')
-    .neq('cea_number', params.ceaNumber)
-    .gte('total_transactions', lowerBound)
-    .lte('total_transactions', upperBound)
-    .order('total_transactions', { ascending: false })
-    .limit(20);
-
-  if (error) {
-    console.error('getSimilarVolumeAgents failed:', error.message);
-    return [];
-  }
-
-  const target = params.totalTransactions;
-  return ((data || []) as AgentRow[])
-    .sort((a, b) => Math.abs((a.total_transactions || 0) - target) - Math.abs((b.total_transactions || 0) - target))
-    .slice(0, params.limit || 4);
+  return getCachedSimilarVolumeAgents({
+    ceaNumber: params.ceaNumber,
+    totalTransactions: params.totalTransactions,
+    limit: params.limit || 4,
+  });
 }
 
 export interface AreaAgentRow extends AgentRow {
   area_count: number;
 }
 
+const getCachedSameAreaAgents = unstable_cache(
+  async (params: {
+    ceaNumber: string;
+    area: string;
+    limit: number;
+  }): Promise<AreaAgentRow[]> => {
+    const supabase = await getSupabase();
+    if (!supabase || !params.area) return [];
+
+    const { data, error } = await supabase.rpc('get_agents_by_area', {
+      area_filter: params.area,
+      exclude_cea: params.ceaNumber,
+      result_limit: params.limit,
+    });
+
+    if (error) {
+      console.error('getSameAreaAgents failed:', error.message);
+      return [];
+    }
+
+    return ((data || []) as Array<Record<string, unknown>>).map((row) => ({
+      cea_number: String(row.cea_number || ''),
+      name: String(row.name || ''),
+      agency: row.agency ? String(row.agency) : null,
+      phone: null,
+      email: null,
+      registration_start: null,
+      registration_end: null,
+      total_transactions: Number(row.total_transactions || 0),
+      area_count: Number(row.area_count || 0),
+    }));
+  },
+  ['same-area-agents'],
+  { revalidate: 600 }
+);
+
 export async function getSameAreaAgents(params: {
   ceaNumber: string;
   area: string;
   limit?: number;
 }): Promise<AreaAgentRow[]> {
-  const supabase = await getSupabase();
-  if (!supabase || !params.area) return [];
-
-  const { data, error } = await supabase.rpc('get_agents_by_area', {
-    area_filter: params.area,
-    exclude_cea: params.ceaNumber,
-    result_limit: params.limit || 4,
+  return getCachedSameAreaAgents({
+    ceaNumber: params.ceaNumber,
+    area: params.area,
+    limit: params.limit || 4,
   });
-
-  if (error) {
-    console.error('getSameAreaAgents failed:', error.message);
-    return [];
-  }
-
-  return ((data || []) as Array<Record<string, unknown>>).map((row) => ({
-    cea_number: String(row.cea_number || ''),
-    name: String(row.name || ''),
-    agency: row.agency ? String(row.agency) : null,
-    phone: null,
-    email: null,
-    registration_start: null,
-    registration_end: null,
-    total_transactions: Number(row.total_transactions || 0),
-    area_count: Number(row.area_count || 0),
-  }));
 }
 
 export interface PropertyTypeAgentRow extends AgentRow {
   type_count: number;
 }
 
+const getCachedSamePropertyTypeAgents = unstable_cache(
+  async (params: {
+    ceaNumber: string;
+    propertyType: string;
+    limit: number;
+  }): Promise<PropertyTypeAgentRow[]> => {
+    const supabase = await getSupabase();
+    if (!supabase || !params.propertyType) return [];
+
+    const { data, error } = await supabase.rpc('get_agents_by_property_type', {
+      property_type_filter: params.propertyType,
+      exclude_cea: params.ceaNumber,
+      result_limit: params.limit,
+    });
+
+    if (error) {
+      console.error('getSamePropertyTypeAgents failed:', error.message);
+      return [];
+    }
+
+    return ((data || []) as Array<Record<string, unknown>>).map((row) => ({
+      cea_number: String(row.cea_number || ''),
+      name: String(row.name || ''),
+      agency: row.agency ? String(row.agency) : null,
+      phone: null,
+      email: null,
+      registration_start: null,
+      registration_end: null,
+      total_transactions: Number(row.total_transactions || 0),
+      type_count: Number(row.type_count || 0),
+    }));
+  },
+  ['same-property-type-agents'],
+  { revalidate: 600 }
+);
+
 export async function getSamePropertyTypeAgents(params: {
   ceaNumber: string;
   propertyType: string;
   limit?: number;
 }): Promise<PropertyTypeAgentRow[]> {
-  const supabase = await getSupabase();
-  if (!supabase || !params.propertyType) return [];
-
-  const { data, error } = await supabase.rpc('get_agents_by_property_type', {
-    property_type_filter: params.propertyType,
-    exclude_cea: params.ceaNumber,
-    result_limit: params.limit || 4,
+  return getCachedSamePropertyTypeAgents({
+    ceaNumber: params.ceaNumber,
+    propertyType: params.propertyType,
+    limit: params.limit || 4,
   });
-
-  if (error) {
-    console.error('getSamePropertyTypeAgents failed:', error.message);
-    return [];
-  }
-
-  return ((data || []) as Array<Record<string, unknown>>).map((row) => ({
-    cea_number: String(row.cea_number || ''),
-    name: String(row.name || ''),
-    agency: row.agency ? String(row.agency) : null,
-    phone: null,
-    email: null,
-    registration_start: null,
-    registration_end: null,
-    total_transactions: Number(row.total_transactions || 0),
-    type_count: Number(row.type_count || 0),
-  }));
 }
 
 export interface AreaOption {
