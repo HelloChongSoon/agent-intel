@@ -1195,29 +1195,81 @@ export interface AreaOption {
   count: number;
 }
 
+const getCachedAreas = unstable_cache(
+  async (minAgents: number): Promise<AreaOption[]> => {
+    const supabase = await getSupabase();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase.rpc('get_areas', { min_agents: minAgents });
+
+    if (error) {
+      console.error('getAreas failed:', error.message);
+      return [];
+    }
+
+    return ((data || []) as Array<Record<string, unknown>>)
+      .map((row) => ({
+        name: String(row.area || ''),
+        count: Number(row.agent_count || 0),
+      }))
+      .filter((a) => a.name.length > 0);
+  },
+  ['areas'],
+  { revalidate: 900 }
+);
+
 export async function getAreas(minAgents: number = 3): Promise<AreaOption[]> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase.rpc('get_areas', { min_agents: minAgents });
-
-  if (error) {
-    console.error('getAreas failed:', error.message);
-    return [];
-  }
-
-  return ((data || []) as Array<Record<string, unknown>>)
-    .map((row) => ({
-      name: String(row.area || ''),
-      count: Number(row.agent_count || 0),
-    }))
-    .filter((a) => a.name.length > 0);
+  return getCachedAreas(minAgents);
 }
 
 export async function getAreaBySlug(slug: string): Promise<string | null> {
   const areas = await getAreas(1);
   return areas.find((a) => slugifySegment(a.name) === slug)?.name || null;
 }
+
+const getCachedAreaLeaderboard = unstable_cache(
+  async (params: {
+    area: string;
+    year: number;
+    agency: string | null;
+    propertyType: string | null;
+    page: number;
+    pageSize: number;
+  }): Promise<{ rows: LeaderboardRow[]; total: number }> => {
+    const supabase = await getSupabase();
+    if (!supabase) return { rows: [], total: 0 };
+
+    const { data, error } = await supabase.rpc('get_area_leaderboard', {
+      area_filter: params.area,
+      year_filter: String(params.year),
+      agency_filter: params.agency,
+      property_type_filter: params.propertyType,
+      page_num: params.page,
+      page_size: params.pageSize,
+    });
+
+    if (error) {
+      console.error('getAreaLeaderboard failed:', error.message);
+      return { rows: [], total: 0 };
+    }
+
+    const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
+    const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+
+    return {
+      rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
+        rank,
+        name,
+        cea_number,
+        agency,
+        transactions,
+      })),
+      total,
+    };
+  },
+  ['area-leaderboard'],
+  { revalidate: 600 }
+);
 
 export async function getAreaLeaderboard(params: {
   area: string;
@@ -1227,40 +1279,14 @@ export async function getAreaLeaderboard(params: {
   page?: number;
   pageSize?: number;
 }): Promise<{ rows: LeaderboardRow[]; total: number }> {
-  const supabase = await getSupabase();
-  if (!supabase) return { rows: [], total: 0 };
-
-  const year = params.year || new Date().getFullYear();
-  const page = params.page || 1;
-  const pageSize = params.pageSize || 25;
-
-  const { data, error } = await supabase.rpc('get_area_leaderboard', {
-    area_filter: params.area,
-    year_filter: String(year),
-    agency_filter: params.agency || null,
-    property_type_filter: params.propertyType || null,
-    page_num: page,
-    page_size: pageSize,
+  return getCachedAreaLeaderboard({
+    area: params.area,
+    year: params.year || new Date().getFullYear(),
+    agency: params.agency || null,
+    propertyType: params.propertyType || null,
+    page: params.page || 1,
+    pageSize: params.pageSize || 25,
   });
-
-  if (error) {
-    console.error('getAreaLeaderboard failed:', error.message);
-    return { rows: [], total: 0 };
-  }
-
-  const rows = (data || []) as (LeaderboardRow & { total_count: number })[];
-  const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
-
-  return {
-    rows: rows.map(({ rank, name, cea_number, agency, transactions }) => ({
-      rank,
-      name,
-      cea_number,
-      agency,
-      transactions,
-    })),
-    total,
-  };
 }
 
 export interface AreaPropertyTypeCombo {
@@ -1269,24 +1295,32 @@ export interface AreaPropertyTypeCombo {
   agentCount: number;
 }
 
+const getCachedAreaPropertyTypeCombos = unstable_cache(
+  async (minAgents: number): Promise<AreaPropertyTypeCombo[]> => {
+    const supabase = await getSupabase();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase.rpc('get_area_property_type_combos', { min_agents: minAgents });
+
+    if (error) {
+      console.error('getAreaPropertyTypeCombos failed:', error.message);
+      return [];
+    }
+
+    return ((data || []) as Array<Record<string, unknown>>)
+      .map((row) => ({
+        area: String(row.area || ''),
+        propertyType: String(row.property_type || ''),
+        agentCount: Number(row.agent_count || 0),
+      }))
+      .filter((c) => c.area.length > 0 && c.propertyType.length > 0);
+  },
+  ['area-property-type-combos'],
+  { revalidate: 900 }
+);
+
 export async function getAreaPropertyTypeCombos(minAgents: number = 5): Promise<AreaPropertyTypeCombo[]> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase.rpc('get_area_property_type_combos', { min_agents: minAgents });
-
-  if (error) {
-    console.error('getAreaPropertyTypeCombos failed:', error.message);
-    return [];
-  }
-
-  return ((data || []) as Array<Record<string, unknown>>)
-    .map((row) => ({
-      area: String(row.area || ''),
-      propertyType: String(row.property_type || ''),
-      agentCount: Number(row.agent_count || 0),
-    }))
-    .filter((c) => c.area.length > 0 && c.propertyType.length > 0);
+  return getCachedAreaPropertyTypeCombos(minAgents);
 }
 
 export async function getPropertyTypeBySlug(slug: string): Promise<string | null> {
