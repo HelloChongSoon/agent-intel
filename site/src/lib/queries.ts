@@ -666,6 +666,47 @@ export interface MovementPageResult {
   hasMore: boolean;
 }
 
+const getCachedMovementsPage = unstable_cache(
+  async (params: {
+    page: number;
+    pageSize: number;
+    type: string | null;
+    query: string | null;
+    includeCount: boolean;
+  }): Promise<MovementPageResult> => {
+    const supabase = getSupabase();
+    if (!supabase) return { rows: [], total: 0, hasMore: false };
+    const from = (params.page - 1) * params.pageSize;
+    const { data, error } = await supabase.rpc('get_movements_page', {
+      type_filter: params.type,
+      search_query: params.query,
+      page_num: params.page,
+      page_size: params.pageSize,
+    });
+
+    if (error) {
+      console.error('getMovements failed:', error.message);
+      return { rows: [], total: 0, hasMore: false };
+    }
+
+    const fetchedRows = (data || []) as Array<MovementRow & { has_more?: boolean }>;
+    const hasMore = fetchedRows.length > 0 ? Boolean(fetchedRows[0].has_more) : false;
+    const rows = fetchedRows.map((row) => {
+      const normalizedRow = { ...row };
+      delete (normalizedRow as MovementRow & { has_more?: boolean }).has_more;
+      return normalizedRow as MovementRow;
+    });
+
+    return {
+      rows,
+      total: params.includeCount === false ? 0 : from + rows.length + (hasMore ? 1 : 0),
+      hasMore,
+    };
+  },
+  ['movements-page'],
+  { revalidate: 600 }
+);
+
 export async function getMovements(params: {
   page?: number;
   pageSize?: number;
@@ -673,36 +714,13 @@ export async function getMovements(params: {
   query?: string;
   includeCount?: boolean;
 }): Promise<MovementPageResult> {
-  const supabase = getSupabase();
-  if (!supabase) return { rows: [], total: 0, hasMore: false };
-  const page = params.page || 1;
-  const pageSize = params.pageSize || 20;
-  const from = (page - 1) * pageSize;
-  const { data, error } = await supabase.rpc('get_movements_page', {
-    type_filter: params.type || null,
-    search_query: params.query?.trim() || null,
-    page_num: page,
-    page_size: pageSize,
+  return getCachedMovementsPage({
+    page: params.page || 1,
+    pageSize: params.pageSize || 20,
+    type: params.type || null,
+    query: params.query?.trim() || null,
+    includeCount: params.includeCount !== false,
   });
-
-  if (error) {
-    console.error('getMovements failed:', error.message);
-    return { rows: [], total: 0, hasMore: false };
-  }
-
-  const fetchedRows = (data || []) as Array<MovementRow & { has_more?: boolean }>;
-  const hasMore = fetchedRows.length > 0 ? Boolean(fetchedRows[0].has_more) : false;
-  const rows = fetchedRows.map((row) => {
-    const normalizedRow = { ...row };
-    delete (normalizedRow as MovementRow & { has_more?: boolean }).has_more;
-    return normalizedRow as MovementRow;
-  });
-
-  return {
-    rows,
-    total: params.includeCount === false ? 0 : from + rows.length + (hasMore ? 1 : 0),
-    hasMore,
-  };
 }
 
 const getCachedMovementInsights = unstable_cache(
@@ -859,21 +877,29 @@ export async function getAgencies(): Promise<AgencyOption[]> {
   return getCachedAgencies();
 }
 
+const getCachedAllAgentRefs = unstable_cache(
+  async (): Promise<Array<{ cea_number: string; updated_at?: string | null }>> => {
+    const supabase = await getSupabase();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+      .from('agents')
+      .select('cea_number, updated_at')
+      .order('cea_number', { ascending: true });
+
+    if (error) {
+      console.error('getAllAgentRefs failed:', error.message);
+      return [];
+    }
+
+    return (data || []) as Array<{ cea_number: string; updated_at?: string | null }>;
+  },
+  ['all-agent-refs'],
+  { revalidate: 3600 }
+);
+
 export async function getAllAgentRefs(): Promise<Array<{ cea_number: string; updated_at?: string | null }>> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase
-    .from('agents')
-    .select('cea_number, updated_at')
-    .order('cea_number', { ascending: true });
-
-  if (error) {
-    console.error('getAllAgentRefs failed:', error.message);
-    return [];
-  }
-
-  return (data || []) as Array<{ cea_number: string; updated_at?: string | null }>;
+  return getCachedAllAgentRefs();
 }
 
 export async function getAgencyBySlug(slug: string): Promise<AgencyOption | null> {
@@ -996,23 +1022,31 @@ export async function getAgencySummary(slug: string): Promise<AgencySummary | nu
   };
 }
 
+const getCachedAgencyAgents = unstable_cache(
+  async (agency: string, limit: number): Promise<AgentRow[]> => {
+    const supabase = await getSupabase();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('agency', agency)
+      .order('total_transactions', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('getAgencyAgents failed:', error.message);
+      return [];
+    }
+
+    return (data || []) as AgentRow[];
+  },
+  ['agency-agents'],
+  { revalidate: 600 }
+);
+
 export async function getAgencyAgents(agency: string, limit: number = 6): Promise<AgentRow[]> {
-  const supabase = await getSupabase();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase
-    .from('agents')
-    .select('*')
-    .eq('agency', agency)
-    .order('total_transactions', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error('getAgencyAgents failed:', error.message);
-    return [];
-  }
-
-  return (data || []) as AgentRow[];
+  return getCachedAgencyAgents(agency, limit);
 }
 
 export async function getComparableAgents(params: {
