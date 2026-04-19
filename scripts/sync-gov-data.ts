@@ -129,7 +129,14 @@ function parseCSVLine(line: string): string[] {
   return fields;
 }
 
-async function batchUpsert(table: string, rows: any[], onConflict: string) {
+async function batchUpsert(
+  table: string,
+  rows: any[],
+  onConflict: string,
+  options: { ignoreDuplicates?: boolean } = {}
+) {
+  const ignoreDuplicates = options.ignoreDuplicates ?? true;
+
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     let batch = rows.slice(i, i + BATCH_SIZE);
     // Deduplicate within batch by conflict key to avoid "cannot affect row a second time"
@@ -140,13 +147,13 @@ async function batchUpsert(table: string, rows: any[], onConflict: string) {
       seen.add(key);
       return true;
     });
-    const { error } = await supabase.from(table).upsert(batch, { onConflict, ignoreDuplicates: true });
+    const { error } = await supabase.from(table).upsert(batch, { onConflict, ignoreDuplicates });
     if (error) {
       // FK violations: insert rows one-by-one to skip bad references
       if (error.code === '23503') {
         let inserted = 0;
         for (const row of batch) {
-          const { error: rowErr } = await supabase.from(table).upsert(row, { onConflict, ignoreDuplicates: true });
+          const { error: rowErr } = await supabase.from(table).upsert(row, { onConflict, ignoreDuplicates });
           if (!rowErr) inserted++;
         }
         log(`  Batch ${i}: ${inserted}/${batch.length} rows (skipped FK violations)`);
@@ -187,7 +194,7 @@ async function syncAgents() {
     });
 
     if (batch.length >= BATCH_SIZE) {
-      await batchUpsert('agents', batch, 'cea_number');
+      await batchUpsert('agents', batch, 'cea_number', { ignoreDuplicates: false });
       totalUpserted += batch.length;
       batch = [];
       if (totalUpserted % 10000 === 0) log(`  Agents: ${totalUpserted} upserted`);
@@ -195,7 +202,7 @@ async function syncAgents() {
   }
 
   if (batch.length > 0) {
-    await batchUpsert('agents', batch, 'cea_number');
+    await batchUpsert('agents', batch, 'cea_number', { ignoreDuplicates: false });
     totalUpserted += batch.length;
   }
 

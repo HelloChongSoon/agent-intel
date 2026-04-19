@@ -5,10 +5,14 @@ on:
     - cron: '0 2,14 * * *'  # 2am and 2pm UTC (10am and 10pm SGT)
   workflow_dispatch:  # Manual trigger
 
+concurrency:
+  group: sync-gov-data
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
