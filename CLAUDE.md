@@ -59,3 +59,7 @@ Solo operator. Singapore real estate tech — ERA Singapore web platforms, compe
 <!-- Example:
 - Assumed sitemap existed without verifying → always check robots.txt and HEAD request first
 -->
+
+- **Next.js dev `_app` TypeError with 500s on every static route** → the `.next` build manifest is corrupted (often after a Supabase outage cascades through SSR). Fix: stop server, `rm -rf site/.next`, restart. Don't chase the `_app` error in source — it's a cache artifact.
+- **Cascading SSR fetch failures (`getAgencies`, `getLeaderboardFilterOptions`, etc.)** → check Supabase origin status first with `curl -I https://<project>.supabase.co/rest/v1/` before touching code. Cloudflare 522 = upstream issue, not ours.
+- **Any Supabase client created in SSR** must pass `global.fetch` wrapping `AbortSignal.timeout(3000)`. Without it, one upstream blip hangs every SSR request for minutes. Fail fast → existing `try/catch` returns empty defaults → page still renders.

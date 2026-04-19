@@ -74,6 +74,12 @@ function getSupabase() {
         persistSession: false,
         autoRefreshToken: false,
       },
+      global: {
+        // Fail fast if Supabase origin hangs (e.g. Cloudflare 522) so SSR
+        // renders with empty-state fallbacks instead of blocking for minutes.
+        fetch: (input, init) =>
+          fetch(input, { ...init, signal: AbortSignal.timeout(3000) }),
+      },
     });
   } catch (error) {
     console.error('Failed to initialize Supabase in query layer:', error);

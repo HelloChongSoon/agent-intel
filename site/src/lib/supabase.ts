@@ -13,4 +13,12 @@ if (!hasSupabaseEnv) {
   );
 }
 
-export const supabase = hasSupabaseEnv ? createClient(supabaseUrl!, supabaseAnonKey!) : null;
+export const supabase = hasSupabaseEnv
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      global: {
+        // Fail fast if Supabase origin hangs so SSR doesn't block for minutes.
+        fetch: (input, init) =>
+          fetch(input, { ...init, signal: AbortSignal.timeout(3000) }),
+      },
+    })
+  : null;
