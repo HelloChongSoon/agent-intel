@@ -13,6 +13,8 @@ const supabase = createClient(
 
 const API_KEY = process.env.DATAGOV_API_KEY || '';
 const BATCH_SIZE = 500;
+const MAX_UPSERT_ATTEMPTS = 5;
+const UPSERT_RETRY_BASE_MS = 2_000;
 const TMP_DIR = process.env.TMP_DIR || '/tmp';
 
 const DATASETS = {
@@ -36,6 +38,63 @@ function normalizeLocationPart(value: string | undefined): string | null {
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getErrorMessage(error: any): string {
+  return String(error?.message || error?.error_description || error?.details || error || '');
+}
+
+function isTransientUpsertError(error: any): boolean {
+  const message = getErrorMessage(error).toLowerCase();
+  const code = String(error?.code || error?.status || error?.statusCode || '');
+
+  return (
+    ['502', '503', '504', '522', '523', '524', '57014', '08006', '53300'].includes(code) ||
+    message.includes('502 bad gateway') ||
+    message.includes('503 service unavailable') ||
+    message.includes('504 gateway timeout') ||
+    message.includes('bad gateway') ||
+    message.includes('gateway timeout') ||
+    message.includes('cloudflare') ||
+    message.includes('canceling statement due to statement timeout') ||
+    message.includes('fetch failed') ||
+    message.includes('econnreset') ||
+    message.includes('etimedout') ||
+    message.includes('socket hang up')
+  );
+}
+
+function retryDelay(attempt: number): number {
+  const jitter = Math.floor(Math.random() * 750);
+  return UPSERT_RETRY_BASE_MS * 2 ** (attempt - 1) + jitter;
+}
+
+async function upsertWithRetry(
+  table: string,
+  rows: any | any[],
+  onConflict: string,
+  ignoreDuplicates: boolean,
+  context: string
+) {
+  for (let attempt = 1; attempt <= MAX_UPSERT_ATTEMPTS; attempt++) {
+    const { error } = await supabase.from(table).upsert(rows, { onConflict, ignoreDuplicates });
+
+    if (!error) {
+      return null;
+    }
+
+    if (!isTransientUpsertError(error) || attempt === MAX_UPSERT_ATTEMPTS) {
+      return error;
+    }
+
+    const waitMs = retryDelay(attempt);
+    log(
+      `  ${context}: transient upsert error on attempt ${attempt}/${MAX_UPSERT_ATTEMPTS}; retrying in ${Math.round(waitMs / 1000)}s`
+    );
+    await delay(waitMs);
+  }
+
+  return null;
 }
 
 // Download CSV via data.gov.sg v1 download API (returns S3 presigned URL)
@@ -147,13 +206,13 @@ async function batchUpsert(
       seen.add(key);
       return true;
     });
-    const { error } = await supabase.from(table).upsert(batch, { onConflict, ignoreDuplicates });
+    const error = await upsertWithRetry(table, batch, onConflict, ignoreDuplicates, `${table} batch ${i}`);
     if (error) {
       // FK violations: insert rows one-by-one to skip bad references
       if (error.code === '23503') {
         let inserted = 0;
         for (const row of batch) {
-          const { error: rowErr } = await supabase.from(table).upsert(row, { onConflict, ignoreDuplicates });
+          const rowErr = await upsertWithRetry(table, row, onConflict, ignoreDuplicates, `${table} row fallback ${i}`);
           if (!rowErr) inserted++;
         }
         log(`  Batch ${i}: ${inserted}/${batch.length} rows (skipped FK violations)`);
